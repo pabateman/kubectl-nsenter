@@ -3,8 +3,10 @@ module github.com/pabateman/kubectl-nsenter
 go 1.17
 
 require (
+	github.com/kevinburke/ssh_config v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.3.0
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	k8s.io/apimachinery v0.23.3
 	k8s.io/client-go v0.23.3
 )

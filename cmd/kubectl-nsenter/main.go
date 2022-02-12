@@ -44,6 +44,19 @@ func main() {
 				Value:    "",
 				Required: false,
 			},
+			&cli.StringFlag{
+				Name:     "context",
+				Usage:    "override current context from kubeconfig",
+				Value:    "",
+				Required: false,
+			},
+			&cli.StringFlag{
+				Name:     "namespace",
+				Aliases:  []string{"n"},
+				Usage:    "override namespace of current context from kubeconfig",
+				Value:    "",
+				Required: false,
+			},
 		},
 	}
 
