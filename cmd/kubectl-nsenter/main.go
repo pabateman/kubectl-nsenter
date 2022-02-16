@@ -2,12 +2,19 @@ package main
 
 import (
 	"fmt"
+	"github.com/pabateman/kubectl-nsenter/internal/nsenter"
 	"github.com/urfave/cli/v2"
 	"k8s.io/client-go/util/homedir"
 
 	"os"
+	"os/user"
 	"time"
 )
+
+func getSystemUser() *user.User {
+	systemUser, _ := user.Current()
+	return systemUser
+}
 
 func main() {
 	app := &cli.App{
@@ -27,7 +34,7 @@ func main() {
 		UseShortOptionHandling: true,
 		EnableBashCompletion:   true,
 		HideHelpCommand:        true,
-		Action:                 nsenter,
+		Action:                 nsenter.Nsenter,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "kubeconfig",
@@ -55,6 +62,13 @@ func main() {
 				Aliases:  []string{"n"},
 				Usage:    "override namespace of current context from kubeconfig",
 				Value:    "",
+				Required: false,
+			},
+			&cli.StringFlag{
+				Name:     "user",
+				Aliases:  []string{"u"},
+				Usage:    "set username for ssh connection to node",
+				Value:    getSystemUser().Username,
 				Required: false,
 			},
 		},
