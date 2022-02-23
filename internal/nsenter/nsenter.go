@@ -1,10 +1,16 @@
 package nsenter
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
+	"net"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 func Nsenter(clictx *cli.Context) error {
@@ -34,12 +40,42 @@ func Nsenter(clictx *cli.Context) error {
 	}
 
 	sshUser := clictx.String("user")
+	sshAuthSock := clictx.String("ssh-auth-sock")
+	sshPort := clictx.String("port")
+	sshHost := net.JoinHostPort(containerInfo.NodeIP, sshPort)
 
-	sshClient, err := BuildSshClient(containerInfo.NodeIP, sshUser)
-	if err != nil {
-		return fmt.Errorf("can't build ssh client: %v", err)
+	sshConfig := &ssh.ClientConfig{
+		User: sshUser,
+		//HostKeyCallback: hostKeyCallback,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
 	}
-	defer sshClient.Close()
-	SshExecute(sshClient, strings.Join(command, " "))
+	sshClient := new(ssh.Client)
+
+	agentConnection, err := net.Dial("unix", sshAuthSock)
+	if err == nil {
+		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
+		sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
+		if err != nil {
+			return errors.Wrapf(err, "can't dial node %s@%s", sshUser, sshHost)
+		}
+	}
+
+	sshSession, err := sshClient.NewSession()
+	if err != nil {
+		return errors.Wrap(err, "can't build ssh session")
+	}
+	defer sshSession.Close()
+	var stdout bytes.Buffer
+
+	sudoCheckCommand := "sudo true; echo $?"
+
+	sshSession.Stdout = &stdout
+	sshSession.Run(sudoCheckCommand)
+	fmt.Println(stdout.String())
+	if stdout.String() != "0" {
+		return fmt.Errorf("sudo requiried")
+	}
+
 	return nil
 }

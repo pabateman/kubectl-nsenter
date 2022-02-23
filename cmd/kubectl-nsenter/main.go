@@ -71,11 +71,24 @@ func main() {
 				Value:    getSystemUser().Username,
 				Required: false,
 			},
+			&cli.StringFlag{
+				Name:     "ssh-auth-sock",
+				Usage:    "sets ssh-agent socket",
+				EnvVars:  []string{"SSH_AUTH_SOCK"},
+				Required: false,
+			},
+			&cli.StringFlag{
+				Name:     "port",
+				Aliases:  []string{"p"},
+				Usage:    "sets ssh port",
+				Value:    "22",
+				Required: false,
+			},
 		},
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
-		fmt.Printf("%v:\n%+v", os.Args[0], err)
+		fmt.Printf("%+v: %+v", os.Args[0], err)
 	}
 }

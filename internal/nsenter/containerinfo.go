@@ -46,8 +46,7 @@ func GetContainerInfo(kubeconfigFiles []string, contextOverride string, namespac
 		return nil, errors.Wrap(err, "can't build client")
 	}
 
-	goctx := context.Background()
-	podSpec, err := clientset.CoreV1().Pods(namespace).Get(goctx, pod, metav1.GetOptions{})
+	podSpec, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), pod, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get pod spec")
 	}
