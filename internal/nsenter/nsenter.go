@@ -1,16 +1,19 @@
 package nsenter
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"net"
+	"os"
+
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/term"
 )
 
 func Nsenter(clictx *cli.Context) error {
@@ -36,7 +39,7 @@ func Nsenter(clictx *cli.Context) error {
 		podName,
 		container)
 	if err != nil {
-		return fmt.Errorf("can't get container info: %v", err)
+		return errors.WithMessage(err, "can't get container info")
 	}
 
 	sshUser := clictx.String("user")
@@ -57,7 +60,7 @@ func Nsenter(clictx *cli.Context) error {
 		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
 		sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
 		if err != nil {
-			return errors.Wrapf(err, "can't dial node %s@%s", sshUser, sshHost)
+			return errors.WithMessagef(err, "can't dial node %s@%s\n", sshUser, sshHost)
 		}
 	}
 
@@ -66,15 +69,48 @@ func Nsenter(clictx *cli.Context) error {
 		return errors.Wrap(err, "can't build ssh session")
 	}
 	defer sshSession.Close()
-	var stdout bytes.Buffer
 
-	sudoCheckCommand := "sudo true; echo $?"
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		errors.Wrap(err, "failed to make tty")
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
-	sshSession.Stdout = &stdout
-	sshSession.Run(sudoCheckCommand)
-	fmt.Println(stdout.String())
-	if stdout.String() != "0" {
-		return fmt.Errorf("sudo requiried")
+	ttyWidth, ttyHeight, err := term.GetSize(int(os.Stdin.Fd()))
+	if err != nil {
+		errors.Wrap(err, "failed to get tty size")
+	}
+
+	modes := ssh.TerminalModes{
+		ssh.ECHO: 1,
+	}
+
+	if err := sshSession.RequestPty("xterm", ttyHeight, ttyWidth, modes); err != nil {
+		return errors.Wrap(err, "failed to request pty")
+	}
+
+	var pidDiscoverCommand string
+	switch containerInfo.ContainerRuntime {
+	case "docker":
+		pidDiscoverCommand = fmt.Sprintf("sudo docker inspect %s --format {{.State.Pid}}", containerInfo.ContainerID)
+	case "containerd":
+		pidDiscoverCommand = fmt.Sprintf("sudo crictl inspect --output go-template --template={{.info.pid}} %s", containerInfo.ContainerID)
+	default:
+		return fmt.Errorf("unsupported container runtime")
+	}
+
+	sshSession.Stdout = os.Stdout
+	sshSession.Stderr = os.Stderr
+	sshSession.Stdin = os.Stdin
+
+	nsenterNamespaces := clictx.StringSlice("ns")
+	nsenterCommand := fmt.Sprintf("sudo nsenter -%s -t $(%s) %s",
+		strings.Join(nsenterNamespaces, " -"),
+		pidDiscoverCommand,
+		strings.Join(command, " "))
+
+	if err := sshSession.Run(nsenterCommand); err != nil {
+		errors.Wrap(err, "failed to start shell: %s")
 	}
 
 	return nil

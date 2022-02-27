@@ -7,14 +7,8 @@ import (
 	"k8s.io/client-go/util/homedir"
 
 	"os"
-	"os/user"
 	"time"
 )
-
-func getSystemUser() *user.User {
-	systemUser, _ := user.Current()
-	return systemUser
-}
 
 func main() {
 	app := &cli.App{
@@ -68,20 +62,27 @@ func main() {
 				Name:     "user",
 				Aliases:  []string{"u"},
 				Usage:    "set username for ssh connection to node",
-				Value:    getSystemUser().Username,
+				EnvVars:  []string{"USER"},
 				Required: false,
 			},
 			&cli.StringFlag{
-				Name:     "ssh-auth-sock",
-				Usage:    "sets ssh-agent socket",
-				EnvVars:  []string{"SSH_AUTH_SOCK"},
-				Required: false,
+				Name:        "ssh-auth-sock",
+				Usage:       "sets ssh-agent socket",
+				EnvVars:     []string{"SSH_AUTH_SOCK"},
+				DefaultText: "current shell auth sock",
+				Required:    false,
 			},
 			&cli.StringFlag{
 				Name:     "port",
 				Aliases:  []string{"p"},
 				Usage:    "sets ssh port",
 				Value:    "22",
+				Required: false,
+			},
+			&cli.StringSliceFlag{
+				Name:     "ns",
+				Usage:    "define container's pid linux namespaces to enter. sends transparently to nsenter cmd",
+				Value:    cli.NewStringSlice("n"),
 				Required: false,
 			},
 		},
