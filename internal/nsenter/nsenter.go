@@ -16,6 +16,15 @@ import (
 	"golang.org/x/term"
 )
 
+func requestPassword(user, host string) (string, error) {
+	fmt.Printf("%s@%s's password: ", user, host)
+	password, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return "", errors.New("failed to read password")
+	}
+	return string(password), nil
+}
+
 func Nsenter(clictx *cli.Context) error {
 	container := clictx.String("container")
 	kubeconfigPath := clictx.String("kubeconfig")
@@ -44,8 +53,6 @@ func Nsenter(clictx *cli.Context) error {
 
 	sshUser := clictx.String("user")
 	sshAuthSock := clictx.String("ssh-auth-sock")
-	sshPort := clictx.String("port")
-	sshHost := net.JoinHostPort(containerInfo.NodeIP, sshPort)
 
 	sshConfig := &ssh.ClientConfig{
 		User: sshUser,
@@ -53,15 +60,26 @@ func Nsenter(clictx *cli.Context) error {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         10 * time.Second,
 	}
-	sshClient := new(ssh.Client)
 
-	agentConnection, err := net.Dial("unix", sshAuthSock)
-	if err == nil {
-		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
-		sshClient, err = ssh.Dial("tcp", sshHost, sshConfig)
+	if clictx.Bool("password") {
+		password, err := requestPassword(sshUser, containerInfo.NodeIP)
 		if err != nil {
-			return errors.WithMessagef(err, "can't dial node %s@%s\n", sshUser, sshHost)
+			return errors.New("failed to request password")
 		}
+		sshConfig.Auth = []ssh.AuthMethod{ssh.Password(password)}
+	} else {
+		agentConnection, err := net.Dial("unix", sshAuthSock)
+		if err == nil {
+			sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
+		}
+	}
+
+	sshPort := clictx.String("port")
+	sshHost := net.JoinHostPort(containerInfo.NodeIP, sshPort)
+
+	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
+	if err != nil {
+		return errors.WithMessagef(err, "can't dial node %s@%s\n", sshUser, containerInfo.NodeIP)
 	}
 
 	sshSession, err := sshClient.NewSession()
@@ -85,7 +103,8 @@ func Nsenter(clictx *cli.Context) error {
 		ssh.ECHO: 1,
 	}
 
-	if err := sshSession.RequestPty("xterm", ttyHeight, ttyWidth, modes); err != nil {
+	err = sshSession.RequestPty("xterm", ttyHeight, ttyWidth, modes)
+	if err != nil {
 		return errors.Wrap(err, "failed to request pty")
 	}
 

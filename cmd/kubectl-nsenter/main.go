@@ -65,6 +65,12 @@ func main() {
 				EnvVars:  []string{"USER"},
 				Required: false,
 			},
+			&cli.BoolFlag{
+				Name:    "password",
+				Aliases: []string{"s"},
+				Usage:   "force ask for node password prompt",
+				Value:   false,
+			},
 			&cli.StringFlag{
 				Name:        "ssh-auth-sock",
 				Usage:       "sets ssh-agent socket",
