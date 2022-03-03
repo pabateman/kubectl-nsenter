@@ -90,13 +90,13 @@ func Nsenter(clictx *cli.Context) error {
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
-		errors.Wrap(err, "failed to make tty")
+		return errors.Wrap(err, "failed to make tty")
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
 	ttyWidth, ttyHeight, err := term.GetSize(int(os.Stdin.Fd()))
 	if err != nil {
-		errors.Wrap(err, "failed to get tty size")
+		return errors.Wrap(err, "failed to get tty size")
 	}
 
 	modes := ssh.TerminalModes{
@@ -128,8 +128,9 @@ func Nsenter(clictx *cli.Context) error {
 		pidDiscoverCommand,
 		strings.Join(command, " "))
 
-	if err := sshSession.Run(nsenterCommand); err != nil {
-		errors.Wrap(err, "failed to start shell: %s")
+	err = sshSession.Run(nsenterCommand)
+	if err != nil {
+		return errors.Wrap(err, "failed to start shell: %s")
 	}
 
 	return nil

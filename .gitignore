@@ -1,2 +1,9 @@
+# IDE
 .idea/
 .vscode/
+
+# Dev bin
+/kubectl-nsenter
+
+# Build artifacts
+out/

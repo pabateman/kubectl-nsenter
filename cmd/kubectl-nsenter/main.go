@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"github.com/pabateman/kubectl-nsenter/internal/nsenter"
 	"github.com/urfave/cli/v2"
 	"k8s.io/client-go/util/homedir"
 
+	"fmt"
 	"os"
 	"time"
 )
@@ -13,7 +13,7 @@ import (
 func main() {
 	app := &cli.App{
 		Name:     "kubectl-nsenter",
-		Version:  "0.1.0",
+		Version:  "v0.1.0",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
