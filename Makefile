@@ -76,7 +76,7 @@ build: $(BUILDDIR)
 
 .PHONY: lint
 lint:
-	sh hack/run-lint.sh
+	hack/run-lint.sh
 
 .PRECIOUS: %.gz
 %.gz: %
