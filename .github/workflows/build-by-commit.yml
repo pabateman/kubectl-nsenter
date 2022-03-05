@@ -1,4 +1,4 @@
-name: kubectl-nsenter
+name: build by commit
 
 on:
   push:
