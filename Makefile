@@ -83,7 +83,8 @@ lint:
 	$(COMPRESS) "$<" > "$@"
 
 %.tar: %
-	tar cf "$@" -C $(BUILDDIR) $(patsubst $(BUILDDIR)/%,%,$^)
+	cp LICENSE $(BUILDDIR)
+	tar cf "$@" -C $(BUILDDIR) LICENSE $(patsubst $(BUILDDIR)/%,%,$^)
 
 %.sha256: %
 	sha256sum  $< > $@
@@ -94,6 +95,7 @@ $(DISTFILE:.gz=): $(BUILDDIR)
 
 .PHONY: deploy
 deploy: $(CHECKSUMS)
+		$(RM) $(BUILDDIR)/LICENSE
 
 .PHONY: dist
 dist: $(DISTFILE)
