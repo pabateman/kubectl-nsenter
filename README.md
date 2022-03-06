@@ -1,12 +1,12 @@
 # kubectl-nsenter
 
 Hey, buddy! Tired of the endless debug pods/node shells? `kubectl-nsenter` summoned to help you!
+
 ## TL;DR
 
 ![nsenter demo](/img/demo.gif)
 
-
-```
+```bash
 GLOBAL OPTIONS:
    --kubeconfig value           kubernetes client config path (default: $HOME/.kube/config) [$KUBECONFIG]
    --container value, -c value  use namespace of specified container. By default first container will taken
@@ -28,22 +28,36 @@ GLOBAL OPTIONS:
 
 ## How can i use this?
 
-Discover pod's opened tcp-ports:
+First we gotta talk about requirements:
 
-```
+- You **must** have a **root access** to node (with password or not) where pod is running
+- Your node **must** have CRI client for discovering container's pid (e.g. `crictl` for **containerd** or `docker` for **docker engine**)
+
+If you can handle this requirements, we're moving on':
+
+**Discover pod's opened tcp-ports**:
+
+```bash
 $ kubectl-nsenter -u vagrant httpbin-5876b4fbc9-rtvrq ss -tln
 State         Recv-Q        Send-Q               Local Address:Port               Peer Address:Port       Process
 LISTEN        0             128                        0.0.0.0:80                      0.0.0.0:*
 ```
 
-Discover pod's mounts:
+**Discover pod's mounts**:
 
-```
+```bash
 $ kubectl-nsenter -u vagrant --ns m --ns p  httpbin-5876b4fbc9-rtvrq mount -t xfs
 /dev/vda1 on /dev/termination-log type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
 /dev/vda1 on /etc/resolv.conf type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
 /dev/vda1 on /etc/hostname type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
 /dev/vda1 on /etc/hosts type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
+```
+
+**Or start a full shell session as well**:
+
+```bash
+$ kubectl-nsenter -u vagrant httpbin-5876b4fbc9-rtvrq bash
+[root@w-01 ~]#
 ```
 
 And so on!
@@ -55,10 +69,10 @@ SSH:
 - Ssh-agent;
 - Password.
 
-Container Runtimes:
+Container Runtimes Clients:
 
-- Docker;
-- Containerd.
+- docker;
+- crictl.
 
 OS:
 
@@ -66,5 +80,5 @@ OS:
 
 ## Known limitations
 
-- Unfortunately, there are only interactive session with tty allocating available. Will be fixed in future versions.
+- Unfortunately, there are only interactive session with tty allocating available.
 - Currently there is no way to use this plugin on Windows because tty issues.
