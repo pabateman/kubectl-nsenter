@@ -21,6 +21,8 @@ spec:
     files:
       - from: kubectl-nsenter-linux-amd64
         to: kubectl-nsenter
+      - from: LICENSE
+        to: .
   - selector:
       matchLabels:
         os: darwin
@@ -31,6 +33,8 @@ spec:
     files:
       - from: kubectl-nsenter-darwin-amd64
         to: kubectl-nsenter
+      - from: LICENSE
+        to: .
   - selector:
       matchLabels:
         os: darwin
@@ -41,3 +45,5 @@ spec:
     files:
       - from: kubectl-nsenter-darwin-arm64
         to: kubectl-nsenter
+      - from: LICENSE
+        to: .
