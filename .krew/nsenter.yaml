@@ -16,7 +16,7 @@ spec:
         os: linux
         arch: amd64
     uri: https://github.com/pabateman/kubectl-nsenter/releases/download/v0.1.0/kubectl-nsenter-linux-amd64.tar.gz
-    sha256: 0aec78b0dc717a6433f8e832ed4be4dc6be62085028c99a496c0bebf8104e0ac
+    sha256: 51707d4fb17e3280ddbb68a3730f5e6e01c1d4d493293adbf8d168306aaf5609
     bin: kubectl-nsenter
     files:
       - from: kubectl-nsenter-linux-amd64
@@ -26,7 +26,7 @@ spec:
         os: darwin
         arch: amd64
     uri: https://github.com/pabateman/kubectl-nsenter/releases/download/v0.1.0/kubectl-nsenter-darwin-amd64.tar.gz
-    sha256: 1fd2bbfe10f7e7b577c82a0d62e062cb047fb2ddc72790991e09b452d57802f1
+    sha256: ee9d1edb25e834310f032669e53a676965a4cb17ced4ea49a4e0c8f484387a65
     bin: kubectl-nsenter
     files:
       - from: kubectl-nsenter-darwin-amd64
@@ -36,7 +36,7 @@ spec:
         os: darwin
         arch: arm64
     uri: https://github.com/pabateman/kubectl-nsenter/releases/download/v0.1.0/kubectl-nsenter-darwin-arm64.tar.gz
-    sha256: 01ceb0124154f09ddff6fe269f98f4053e8564b70eedac171bf2a06d29d2f805
+    sha256: f0a6ec223938d17779b66a186a0b9cd95eccfc21ec27457b4f3ebcd8d7e0159b
     bin: kubectl-nsenter
     files:
       - from: kubectl-nsenter-darwin-arm64
