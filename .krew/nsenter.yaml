@@ -1,0 +1,43 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: nsenter
+spec:
+  version: "v0.1.0"
+  homepage: https://github.com/pabateman/kubectl-nsenter
+  shortDescription: "Execute shell command under container namespace of pod"
+  description: |
+    Kubectl plugin for pod's linux namespaces command execution via direct node ssh connection
+  caveats: |
+    Almost done. Now activate your ssh agent ang go on!
+  platforms:
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    uri: https://github.com/pabateman/kubectl-nsenter/releases/download/v0.1.0/kubectl-nsenter-linux-amd64.tar.gz
+    sha256: 0aec78b0dc717a6433f8e832ed4be4dc6be62085028c99a496c0bebf8104e0ac
+    bin: kubectl-nsenter
+    files:
+      - from: kubectl-nsenter-linux-amd64
+        to: kubectl-nsenter
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    uri: https://github.com/pabateman/kubectl-nsenter/releases/download/v0.1.0/kubectl-nsenter-darwin-amd64.tar.gz
+    sha256: 1fd2bbfe10f7e7b577c82a0d62e062cb047fb2ddc72790991e09b452d57802f1
+    bin: kubectl-nsenter
+    files:
+      - from: kubectl-nsenter-darwin-amd64
+        to: kubectl-nsenter
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    uri: https://github.com/pabateman/kubectl-nsenter/releases/download/v0.1.0/kubectl-nsenter-darwin-arm64.tar.gz
+    sha256: 01ceb0124154f09ddff6fe269f98f4053e8564b70eedac171bf2a06d29d2f805
+    bin: kubectl-nsenter
+    files:
+      - from: kubectl-nsenter-darwin-arm64
+        to: kubectl-nsenter
