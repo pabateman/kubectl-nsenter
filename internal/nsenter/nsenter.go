@@ -26,27 +26,19 @@ func requestPassword(user, host string) (string, error) {
 }
 
 func Nsenter(clictx *cli.Context) error {
-	container := clictx.String("container")
-	kubeconfigPath := clictx.String("kubeconfig")
-	contextOverride := clictx.String("context")
-	namespaceOverride := clictx.String("namespace")
 	podName := clictx.Args().First()
 	if podName == "" {
 		fmt.Println("you must specify pod name!")
 		return cli.ShowAppHelp(clictx)
 	}
+
 	command := clictx.Args().Tail()
 	if len(command) == 0 {
 		fmt.Println("you must provide a command!")
 		return cli.ShowAppHelp(clictx)
 	}
-	kubeconfigFiles := strings.Split(kubeconfigPath, ":")
-	containerInfo, err := GetContainerInfo(
-		kubeconfigFiles,
-		contextOverride,
-		namespaceOverride,
-		podName,
-		container)
+
+	containerInfo, err := GetContainerInfo(clictx)
 	if err != nil {
 		return errors.WithMessage(err, "can't get container info")
 	}
@@ -72,6 +64,10 @@ func Nsenter(clictx *cli.Context) error {
 		if err == nil {
 			sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
 		}
+	}
+
+	if clictx.String("host") != "" {
+		containerInfo.NodeIP = clictx.String("host")
 	}
 
 	sshPort := clictx.String("port")
@@ -112,7 +108,7 @@ func Nsenter(clictx *cli.Context) error {
 	switch containerInfo.ContainerRuntime {
 	case "docker":
 		pidDiscoverCommand = fmt.Sprintf("sudo docker inspect %s --format {{.State.Pid}}", containerInfo.ContainerID)
-	case "containerd":
+	case "containerd", "cri-o":
 		pidDiscoverCommand = fmt.Sprintf("sudo crictl inspect --output go-template --template={{.info.pid}} %s", containerInfo.ContainerID)
 	default:
 		return fmt.Errorf("unsupported container runtime")

@@ -79,6 +79,11 @@ func main() {
 				Required:    false,
 			},
 			&cli.StringFlag{
+				Name:     "host",
+				Usage:    "override node ip",
+				Required: false,
+			},
+			&cli.StringFlag{
 				Name:     "port",
 				Aliases:  []string{"p"},
 				Usage:    "sets ssh port",
