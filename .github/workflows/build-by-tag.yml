@@ -60,3 +60,6 @@ jobs:
         tag: ${{ github.ref }}
         overwrite: true
         file_glob: true
+
+    - name: Update new version in krew-index
+      uses: rajatjindal/krew-release-bot@v0.0.43
