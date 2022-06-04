@@ -20,7 +20,6 @@ spec:
         os: linux
         arch: amd64
     {{addURIAndSha "https://github.com/pabateman/kubectl-nsenter/releases/download/{{ .TagName }}/kubectl-nsenter-linux-amd64.tar.gz" .TagName }}
-    sha256: 51707d4fb17e3280ddbb68a3730f5e6e01c1d4d493293adbf8d168306aaf5609
     bin: kubectl-nsenter
     files:
       - from: kubectl-nsenter-linux-amd64
