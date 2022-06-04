@@ -13,7 +13,7 @@ import (
 func main() {
 	app := &cli.App{
 		Name:     "kubectl-nsenter",
-		Version:  "v0.1.0",
+		Version:  "v0.1.1",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
