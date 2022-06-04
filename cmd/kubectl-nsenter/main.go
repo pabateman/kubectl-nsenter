@@ -13,7 +13,7 @@ import (
 func main() {
 	app := &cli.App{
 		Name:     "kubectl-nsenter",
-		Version:  "v0.1.0",
+		Version:  "v0.1.1",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
@@ -77,6 +77,11 @@ func main() {
 				EnvVars:     []string{"SSH_AUTH_SOCK"},
 				DefaultText: "current shell auth sock",
 				Required:    false,
+			},
+			&cli.StringFlag{
+				Name:     "host",
+				Usage:    "override node ip",
+				Required: false,
 			},
 			&cli.StringFlag{
 				Name:     "port",

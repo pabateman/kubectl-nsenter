@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/urfave/cli/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -18,41 +19,51 @@ type ContainerInfo struct {
 	ContainerRuntime string
 }
 
-func GetContainerInfo(kubeconfigFiles []string, contextOverride string, namespaceOverride string, pod string, container string) (*ContainerInfo, error) {
-
+func GetClientSet(clictx *cli.Context) (*kubernetes.Clientset, string, error) {
 	config := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{Precedence: kubeconfigFiles},
+		&clientcmd.ClientConfigLoadingRules{Precedence: strings.Split(clictx.String("kubeconfig"), ":")},
 		&clientcmd.ConfigOverrides{
-			CurrentContext: contextOverride,
+			CurrentContext: clictx.String("context"),
 		})
-
-	var namespace string
-	var err error
-	if namespaceOverride == "" {
-		namespace, _, err = config.Namespace()
-		if err != nil {
-			return nil, errors.Wrap(err, "can't get current namespace")
-		}
-	} else {
-		namespace = namespaceOverride
-	}
 
 	clientConfig, err := config.ClientConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "can't build config")
+		return nil, "", errors.Wrap(err, "can't build config")
 	}
+
 	clientset, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "can't build client")
+	}
+
+	namespace, _, err := config.Namespace()
+	if err != nil {
+		return nil, "", errors.Wrap(err, "can't get current namespace")
+	}
+
+	return clientset, namespace, nil
+}
+
+func GetContainerInfo(clictx *cli.Context) (*ContainerInfo, error) {
+
+	kubeClient, namespace, err := GetClientSet(clictx)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't build client")
 	}
 
-	podSpec, err := clientset.CoreV1().Pods(namespace).Get(context.TODO(), pod, metav1.GetOptions{})
+	if clictx.String("namespace") != "" {
+		namespace = clictx.String("namespace")
+	}
+
+	podSpec, err := kubeClient.CoreV1().Pods(namespace).Get(context.TODO(), clictx.Args().First(), metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get pod spec")
 	}
 
 	var containerID string
 	var containerRuntime string
+	container := clictx.String("container")
+
 	if container != "" {
 		for _, containerStatus := range podSpec.Status.ContainerStatuses {
 			if containerStatus.Name == container {
