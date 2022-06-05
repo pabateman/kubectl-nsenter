@@ -28,11 +28,7 @@ func NewPodSpec(name, namespace string, kubeClient *kubernetes.Clientset) (*v1.P
 func PodInitialized(pod *v1.Pod) bool {
 	for _, condition := range pod.Status.Conditions {
 		if condition.Type == v1.PodInitialized {
-			if condition.Status == v1.ConditionTrue {
-				return true
-			} else {
-				return false
-			}
+			return condition.Status == v1.ConditionTrue
 		}
 	}
 	return false
@@ -42,9 +38,8 @@ func GetInitializingContainerStatus(pod *v1.Pod) (*v1.ContainerStatus, error) {
 	for _, status := range pod.Status.InitContainerStatuses {
 		if status.State.Running != nil {
 			return &status, nil
-		} else {
-			continue
 		}
+		continue
 	}
 	return nil, fmt.Errorf("none of initContainers is running")
 }
@@ -61,21 +56,19 @@ func GetContainerStatus(pod *v1.Pod, clictx *cli.Context) (*v1.ContainerStatus, 
 			if status.Name == container {
 				if status.State.Running != nil {
 					return &status, nil
-				} else {
-					return nil, fmt.Errorf("specified container is not running")
 				}
+				return nil, fmt.Errorf("specified container is not running")
 			}
 			continue
 		}
 		return nil, fmt.Errorf("can't find specified container")
 
-	} else {
-		for _, status := range containerStatuses {
-			if status.State.Running != nil {
-				return &status, nil
-			}
-			continue
+	}
+	for _, status := range containerStatuses {
+		if status.State.Running != nil {
+			return &status, nil
 		}
+		continue
 	}
 
 	return nil, fmt.Errorf("pod %v has no running containers", pod.Name)
