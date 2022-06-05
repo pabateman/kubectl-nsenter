@@ -41,7 +41,7 @@ func main() {
 			&cli.StringFlag{
 				Name:     "container",
 				Aliases:  []string{"c"},
-				Usage:    "use namespace of specified container. By default first container will taken",
+				Usage:    "use namespace of specified container. By default first running container will taken",
 				Value:    "",
 				Required: false,
 			},

@@ -26,8 +26,7 @@ func requestPassword(user, host string) (string, error) {
 }
 
 func Nsenter(clictx *cli.Context) error {
-	podName := clictx.Args().First()
-	if podName == "" {
+	if clictx.Args().First() == "" {
 		fmt.Println("you must specify pod name!")
 		return cli.ShowAppHelp(clictx)
 	}
@@ -40,7 +39,7 @@ func Nsenter(clictx *cli.Context) error {
 
 	containerInfo, err := GetContainerInfo(clictx)
 	if err != nil {
-		return errors.WithMessage(err, "can't get container info")
+		return fmt.Errorf("can't get container info: %v", err)
 	}
 
 	sshUser := clictx.String("user")
@@ -126,7 +125,7 @@ func Nsenter(clictx *cli.Context) error {
 
 	err = sshSession.Run(nsenterCommand)
 	if err != nil {
-		return errors.Wrap(err, "failed to start shell: %s")
+		return fmt.Errorf("remote shell exited with non zero code: %v", err)
 	}
 
 	return nil
