@@ -13,7 +13,7 @@ import (
 func main() {
 	app := &cli.App{
 		Name:     "kubectl-nsenter",
-		Version:  "v0.1.1",
+		Version:  "v0.2.0",
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
@@ -41,7 +41,7 @@ func main() {
 			&cli.StringFlag{
 				Name:     "container",
 				Aliases:  []string{"c"},
-				Usage:    "use namespace of specified container. By default first container will taken",
+				Usage:    "use namespace of specified container. By default first running container will taken",
 				Value:    "",
 				Required: false,
 			},

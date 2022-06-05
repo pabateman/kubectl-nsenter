@@ -9,12 +9,13 @@ Hey, buddy! Tired of the endless debug pods/node shells? `kubectl-nsenter` summo
 ```bash
 GLOBAL OPTIONS:
    --kubeconfig value           kubernetes client config path (default: $HOME/.kube/config) [$KUBECONFIG]
-   --container value, -c value  use namespace of specified container. By default first container will taken
+   --container value, -c value  use namespace of specified container. By default first running container will taken
    --context value              override current context from kubeconfig
    --namespace value, -n value  override namespace of current context from kubeconfig
    --user value, -u value       set username for ssh connection to node (default: "johndoe") [$USER]
    --password, -s               force ask for node password prompt (default: false)
    --ssh-auth-sock value        sets ssh-agent socket (default: current shell auth sock) [$SSH_AUTH_SOCK]
+   --host value                 override node ip
    --port value, -p value       sets ssh port (default: "22")
    --ns value                   define container's pid linux namespaces to enter. sends transparently to nsenter cmd (default: "n")
    --help, -h                   show help (default: false)
@@ -61,6 +62,10 @@ $ kubectl-nsenter -u vagrant httpbin-5876b4fbc9-rtvrq bash
 ```
 
 And so on!
+
+## Init Containers
+
+If desired pod is still initializing, nsenter will pick currently running container or fail, if none of init containers is running.
 
 ## Supported technologies
 
