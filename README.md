@@ -27,7 +27,7 @@ GLOBAL OPTIONS:
 
 `kubectl-nsenter` let you to exec to any pod's container linux namespace, such as network, mount etc. It uses a direct connection to node via ssh and supports two form of authentication: password and key. For auth by key it uses ssh-agent.
 
-## How can i use this?
+## How can I use this?
 
 First we gotta talk about requirements:
 
