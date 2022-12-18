@@ -1,5 +1,9 @@
 # Release history
 
+## v0.2.1
+
+- Improve help tips
+
 ## v0.2.0
 
 - Init containers support
