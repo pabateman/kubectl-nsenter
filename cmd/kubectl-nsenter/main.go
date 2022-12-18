@@ -24,7 +24,14 @@ func main() {
 		HelpName:  "kubectl-nsenter",
 		Usage: "kubectl plugin for pod's linux namespaces command execution " +
 			"via direct node ssh connection",
-		UsageText:              "kubectl-nsenter [pod name] [flags] [command]",
+		UsageText: `kubectl-nsenter [flags] [pod name] [command]
+
+		Example:
+
+		kubectl-nsenter -u node_user sample-pod-0 ip address
+
+		kubectl-nsenter -u node_user -p 2222 postgres-1 tcpdump -nni any port 5432
+		`,
 		UseShortOptionHandling: true,
 		EnableBashCompletion:   true,
 		HideHelpCommand:        true,
