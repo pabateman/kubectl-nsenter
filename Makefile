@@ -21,6 +21,7 @@ COMMIT    := $(shell git rev-parse HEAD)
 VERSION   ?= $(shell git describe --always --tags)
 GOOS      ?= $(shell go env GOOS)
 GOPATH    ?= $(shell go env GOPATH)
+ARTIFACT_VERSION ?= local
 
 BUILDDIR   := $(shell pwd)/out
 PLATFORMS  ?= darwin/amd64 darwin/arm64 linux/amd64
@@ -66,12 +67,12 @@ all: lint build deploy
 .PHONY: dev
 dev: CGO_ENABLED := 1
 dev:
-	go build -race -o $(PROJECT) cmd/$(PROJECT)/main.go
+	go build -race -o $(PROJECT) -ldflags="-X main.Version=$(ARTIFACT_VERSION)" cmd/$(PROJECT)/main.go
 
 .PHONY: build
 build: $(BUILDDIR)
 	cd cmd/$(PROJECT) && \
-	GOFLAGS="-trimpath" gox -osarch="$(PLATFORMS)" -output="$(BUILDDIR)/$(PROJECT)-{{.OS}}-{{.Arch}}" && \
+	GOFLAGS="-trimpath" gox -ldflags="-X main.Version=$(ARTIFACT_VERSION)" -osarch="$(PLATFORMS)" -output="$(BUILDDIR)/$(PROJECT)-{{.OS}}-{{.Arch}}" && \
 	cd ../..
 
 .PHONY: lint

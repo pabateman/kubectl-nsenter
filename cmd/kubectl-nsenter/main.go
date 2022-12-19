@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
+var Version = "local"
+
 func main() {
 	app := &cli.App{
 		Name:     "kubectl-nsenter",
-		Version:  "v0.2.1",
+		Version:  Version,
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
 			{
