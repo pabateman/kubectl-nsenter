@@ -1,5 +1,9 @@
 # Release history
 
+## v0.2.3
+
+- Fix ref name
+
 ## v0.2.2
 
 - Automate binary version

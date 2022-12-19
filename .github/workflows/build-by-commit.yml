@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 env:
-  ARTIFACT_VERSION: ${{ github.ref }}
+  ARTIFACT_VERSION: ${{ github.ref_name }}
 
 jobs:
 

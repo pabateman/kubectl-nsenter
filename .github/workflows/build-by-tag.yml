@@ -6,7 +6,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
 env:
-  ARTIFACT_VERSION: ${{ github.ref }}
+  ARTIFACT_VERSION: ${{ github.ref_name }}
 
 jobs:
 
