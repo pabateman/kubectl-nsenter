@@ -2,6 +2,12 @@
 
 Hey, buddy! Tired of the endless debug pods/node shells? `kubectl-nsenter` summoned to help you!
 
+## Installation
+
+```bash
+kubectl krew install nsenter
+```
+
 ## TL;DR
 
 ![nsenter demo](/img/demo.gif)
