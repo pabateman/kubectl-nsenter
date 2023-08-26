@@ -4,77 +4,59 @@ import (
 	"fmt"
 	"net"
 	"os"
-
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/pabateman/kubectl-nsenter/internal/config"
 
+	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/term"
 )
 
-func requestPassword(user, host string) (string, error) {
-	fmt.Printf("%s@%s's password: ", user, host)
-	password, err := term.ReadPassword(int(os.Stdin.Fd()))
-	if err != nil {
-		return "", errors.New("failed to read password")
-	}
-	return string(password), nil
-}
-
 func Nsenter(clictx *cli.Context) error {
-	if clictx.Args().First() == "" {
-		fmt.Println("you must specify pod name!")
-		return cli.ShowAppHelp(clictx)
+	cfg, err := config.NewConfig(clictx)
+	if err != nil {
+		return err
 	}
 
-	command := clictx.Args().Tail()
-	if len(command) == 0 {
-		fmt.Println("you must provide a command!")
-		return cli.ShowAppHelp(clictx)
-	}
-
-	containerInfo, err := GetContainerInfo(clictx)
+	containerInfo, err := GetContainerInfo(cfg)
 	if err != nil {
 		return fmt.Errorf("can't get container info: %v", err)
 	}
 
-	sshUser := clictx.String("user")
-	sshAuthSock := clictx.String("ssh-auth-sock")
-
 	sshConfig := &ssh.ClientConfig{
-		User: sshUser,
+		User: cfg.SshUser,
 		//HostKeyCallback: hostKeyCallback,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         10 * time.Second,
 	}
 
-	if clictx.Bool("password") {
-		password, err := requestPassword(sshUser, containerInfo.NodeIP)
+	if cfg.SshRequirePassword {
+		password, err := requestPassword(cfg.SshUser, containerInfo.NodeIP)
 		if err != nil {
 			return errors.New("failed to request password")
 		}
 		sshConfig.Auth = []ssh.AuthMethod{ssh.Password(password)}
 	} else {
-		agentConnection, err := net.Dial("unix", sshAuthSock)
-		if err == nil {
-			sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
+		agentConnection, err := net.Dial("unix", cfg.SshSocketPath)
+		if err != nil {
+			return err
 		}
+		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
 	}
 
-	if clictx.String("host") != "" {
-		containerInfo.NodeIP = clictx.String("host")
+	if cfg.SshHost != "" {
+		containerInfo.NodeIP = cfg.SshHost
 	}
 
-	sshPort := clictx.String("port")
-	sshHost := net.JoinHostPort(containerInfo.NodeIP, sshPort)
+	sshHost := net.JoinHostPort(containerInfo.NodeIP, cfg.SshPort)
 
 	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
-		return errors.WithMessagef(err, "can't dial node %s@%s\n", sshUser, containerInfo.NodeIP)
+		return errors.WithMessagef(err, "can't dial node %s@%s\n", cfg.SshUser, containerInfo.NodeIP)
 	}
 
 	sshSession, err := sshClient.NewSession()
@@ -103,25 +85,19 @@ func Nsenter(clictx *cli.Context) error {
 		return errors.Wrap(err, "failed to request pty")
 	}
 
-	var pidDiscoverCommand string
-	switch containerInfo.ContainerRuntime {
-	case "docker":
-		pidDiscoverCommand = fmt.Sprintf("sudo docker inspect %s --format {{.State.Pid}}", containerInfo.ContainerID)
-	case "containerd", "cri-o":
-		pidDiscoverCommand = fmt.Sprintf("sudo crictl inspect --output go-template --template={{.info.pid}} %s", containerInfo.ContainerID)
-	default:
-		return fmt.Errorf("unsupported container runtime")
+	pidDiscoverCommand, err := getPidDiscoverCommand(containerInfo)
+	if err != nil {
+		return err
 	}
 
 	sshSession.Stdout = os.Stdout
 	sshSession.Stderr = os.Stderr
 	sshSession.Stdin = os.Stdin
 
-	nsenterNamespaces := clictx.StringSlice("ns")
 	nsenterCommand := fmt.Sprintf("sudo nsenter -%s -t $(%s) %s",
-		strings.Join(nsenterNamespaces, " -"),
+		strings.Join(cfg.LinuxNs, " -"),
 		pidDiscoverCommand,
-		strings.Join(command, " "))
+		strings.Join(cfg.Command, " "))
 
 	err = sshSession.Run(nsenterCommand)
 	if err != nil {
@@ -129,4 +105,24 @@ func Nsenter(clictx *cli.Context) error {
 	}
 
 	return nil
+}
+
+func requestPassword(user, host string) (string, error) {
+	fmt.Printf("%s@%s's password: ", user, host)
+	password, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return "", errors.New("failed to read password")
+	}
+	return string(password), nil
+}
+
+func getPidDiscoverCommand(c *ContainerInfo) (string, error) {
+	switch c.ContainerRuntime {
+	case "docker":
+		return fmt.Sprintf("sudo docker inspect %s --format {{.State.Pid}}", c.ContainerID), nil
+	case "containerd", "cri-o":
+		return fmt.Sprintf("sudo crictl inspect --output go-template --template={{.info.pid}} %s", c.ContainerID), nil
+	default:
+		return "", fmt.Errorf("unsupported container runtime")
+	}
 }

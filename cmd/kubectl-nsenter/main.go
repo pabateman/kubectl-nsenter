@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/pabateman/kubectl-nsenter/internal/nsenter"
-	"github.com/urfave/cli/v2"
-	"k8s.io/client-go/util/homedir"
-
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/pabateman/kubectl-nsenter/internal/config"
+	"github.com/pabateman/kubectl-nsenter/internal/nsenter"
+
+	"github.com/urfave/cli/v2"
 )
 
 var Version = "local"
@@ -38,74 +39,7 @@ func main() {
 		EnableBashCompletion:   true,
 		HideHelpCommand:        true,
 		Action:                 nsenter.Nsenter,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:        "kubeconfig",
-				Usage:       "kubernetes client config path",
-				EnvVars:     []string{"KUBECONFIG"},
-				Value:       fmt.Sprintf("%s/.kube/config", homedir.HomeDir()),
-				Required:    false,
-				DefaultText: "$HOME/.kube/config",
-			},
-			&cli.StringFlag{
-				Name:     "container",
-				Aliases:  []string{"c"},
-				Usage:    "use namespace of specified container. By default first running container will taken",
-				Value:    "",
-				Required: false,
-			},
-			&cli.StringFlag{
-				Name:     "context",
-				Usage:    "override current context from kubeconfig",
-				Value:    "",
-				Required: false,
-			},
-			&cli.StringFlag{
-				Name:     "namespace",
-				Aliases:  []string{"n"},
-				Usage:    "override namespace of current context from kubeconfig",
-				Value:    "",
-				Required: false,
-			},
-			&cli.StringFlag{
-				Name:     "user",
-				Aliases:  []string{"u"},
-				Usage:    "set username for ssh connection to node",
-				EnvVars:  []string{"USER"},
-				Required: false,
-			},
-			&cli.BoolFlag{
-				Name:    "password",
-				Aliases: []string{"s"},
-				Usage:   "force ask for node password prompt",
-				Value:   false,
-			},
-			&cli.StringFlag{
-				Name:        "ssh-auth-sock",
-				Usage:       "sets ssh-agent socket",
-				EnvVars:     []string{"SSH_AUTH_SOCK"},
-				DefaultText: "current shell auth sock",
-				Required:    false,
-			},
-			&cli.StringFlag{
-				Name:     "host",
-				Usage:    "override node ip",
-				Required: false,
-			},
-			&cli.StringFlag{
-				Name:     "port",
-				Aliases:  []string{"p"},
-				Usage:    "sets ssh port",
-				Value:    "22",
-				Required: false,
-			},
-			&cli.StringSliceFlag{
-				Name:     "ns",
-				Usage:    "define container's pid linux namespaces to enter. sends transparently to nsenter cmd",
-				Value:    cli.NewStringSlice("n"),
-				Required: false,
-			},
-		},
+		Flags:                  config.Flags,
 	}
 
 	err := app.Run(os.Args)
