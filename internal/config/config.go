@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 	"k8s.io/client-go/util/homedir"
 )
 

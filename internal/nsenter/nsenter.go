@@ -10,7 +10,7 @@ import (
 	"github.com/pabateman/kubectl-nsenter/internal/config"
 
 	"github.com/pkg/errors"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/term"

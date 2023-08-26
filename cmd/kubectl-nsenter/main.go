@@ -8,7 +8,7 @@ import (
 	"github.com/pabateman/kubectl-nsenter/internal/config"
 	"github.com/pabateman/kubectl-nsenter/internal/nsenter"
 
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 var Version = "local"
