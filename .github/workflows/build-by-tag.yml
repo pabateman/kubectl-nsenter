@@ -26,13 +26,13 @@ jobs:
     - name: Verify go.mod is sane
       run: go mod tidy && git diff --no-patch --exit-code
 
-    - name: Install dependencies
-      run: go mod download
-
     - name: Run code lint
       uses: golangci/golangci-lint-action@v3.7.0
       with:
         args: --timeout=3m
+
+    - name: Install dependencies
+      run: go mod download
 
     - name: Verify build
       run: make dev
