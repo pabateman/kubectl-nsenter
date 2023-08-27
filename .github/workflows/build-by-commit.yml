@@ -13,7 +13,6 @@ env:
   ARTIFACT_VERSION: ${{ github.ref_name }}
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -31,8 +30,7 @@ jobs:
       run: go mod tidy && git diff --no-patch --exit-code
 
     - name: Run code lint
-      uses: golangci/golangci-lint-action@v3
-      run: make lint
+      uses: golangci/golangci-lint-action@v3.7.0
 
     - name: Install dependencies
       run: go mod download
