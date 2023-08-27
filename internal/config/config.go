@@ -15,9 +15,13 @@ const (
 	argUser        = "user"
 	argPassword    = "password"
 	argSSHAuthSock = "ssh-auth-sock"
+	argSSHOpts     = "ssh-opt"
 	argHost        = "host"
 	argPort        = "port"
 	argNs          = "ns"
+	argInteractive = "interactive"
+	argTTY         = "tty"
+	argUseNodeName = "use-node-name"
 )
 
 var (
@@ -27,66 +31,80 @@ var (
 			Usage:       "kubernetes client config path",
 			EnvVars:     []string{"KUBECONFIG"},
 			Value:       fmt.Sprintf("%s/.kube/config", homedir.HomeDir()),
-			Required:    false,
 			DefaultText: "$HOME/.kube/config",
 		},
 		&cli.StringFlag{
-			Name:     argContainer,
-			Aliases:  []string{"c"},
-			Usage:    "use namespace of specified container. By default first running container will taken",
-			Value:    "",
-			Required: false,
+			Name:    argContainer,
+			Aliases: []string{"c"},
+			Usage:   "use namespace of specified container. By default first running container will taken",
+			Value:   "",
 		},
 		&cli.StringFlag{
-			Name:     argContext,
-			Usage:    "override current context from kubeconfig",
-			Value:    "",
-			Required: false,
+			Name:  argContext,
+			Usage: "override current context from kubeconfig",
+			Value: "",
 		},
 		&cli.StringFlag{
-			Name:     argNamespace,
-			Aliases:  []string{"n"},
-			Usage:    "override namespace of current context from kubeconfig",
-			Value:    "",
-			Required: false,
+			Name:    argNamespace,
+			Aliases: []string{"n"},
+			Usage:   "override namespace of current context from kubeconfig",
+			Value:   "",
 		},
 		&cli.StringFlag{
-			Name:     argUser,
-			Aliases:  []string{"u"},
-			Usage:    "set username for ssh connection to node",
-			EnvVars:  []string{"USER"},
-			Required: false,
+			Name:    argUser,
+			Aliases: []string{"u"},
+			Usage:   "set username for ssh connection to node",
+			EnvVars: []string{"USER"},
 		},
 		&cli.BoolFlag{
 			Name:    argPassword,
 			Aliases: []string{"s"},
 			Usage:   "force ask for node password prompt",
-			Value:   false,
 		},
 		&cli.StringFlag{
 			Name:        argSSHAuthSock,
 			Usage:       "sets ssh-agent socket",
 			EnvVars:     []string{"SSH_AUTH_SOCK"},
 			DefaultText: "current shell auth sock",
-			Required:    false,
 		},
 		&cli.StringFlag{
-			Name:     argHost,
-			Usage:    "override node ip",
-			Required: false,
+			Name:  argHost,
+			Usage: "override node ip",
 		},
 		&cli.StringFlag{
-			Name:     argPort,
-			Aliases:  []string{"p"},
-			Usage:    "sets ssh port",
-			Value:    "22",
-			Required: false,
+			Name:    argPort,
+			Aliases: []string{"p"},
+			Usage:   "sets ssh port",
+			Value:   "22",
 		},
 		&cli.StringSliceFlag{
-			Name:     argNs,
-			Usage:    "define container's pid linux namespaces to enter. Sends transparently to nsenter cmd",
-			Value:    cli.NewStringSlice("n"),
-			Required: false,
+			Name:  argNs,
+			Usage: "define container's pid linux namespaces to enter. Sends transparently to nsenter cmd",
+			Value: cli.NewStringSlice("n"),
+		},
+		&cli.BoolFlag{
+			Name:    argInteractive,
+			Aliases: []string{"i"},
+			Usage:   "keep ssh session stdin",
+			Value:   false,
+		},
+		&cli.BoolFlag{
+			Name:    argTTY,
+			Aliases: []string{"t"},
+			Usage:   "allocate pseudo-TTY for ssh session",
+			Value:   false,
+		},
+		&cli.StringSliceFlag{
+			Name:    argSSHOpts,
+			Aliases: []string{"o"},
+			Usage:   "same as -o for ssh client",
+		},
+		&cli.BoolFlag{
+			Name:    argUseNodeName,
+			Aliases: []string{"j"},
+			Usage:   "use node name to connect with ssh. Useful with ssh configs",
+			EnvVars: []string{"KUBECTL_NSENTER_USE_NODE_NAME"},
+			Value:   true,
 		},
 	}
 	stringFlags = []string{argKubeconfig, argContainer, argContext, argNamespace, argUser, argSSHAuthSock, argHost, argPort}
@@ -104,6 +122,10 @@ type Config struct {
 	SSHSocketPath      string
 	SSHHost            string
 	SSHPort            string
+	SSHOpts            []string
+	Interactive        bool
+	TTY                bool
+	UseNodeName        bool
 	LinuxNs            []string
 }
 
@@ -135,6 +157,10 @@ func NewConfig(clictx *cli.Context) (*Config, error) {
 		SSHRequirePassword: clictx.Bool(argPassword),
 		SSHHost:            clictx.String(argHost),
 		SSHPort:            clictx.String(argPort),
+		SSHOpts:            clictx.StringSlice(argSSHOpts),
+		Interactive:        clictx.Bool(argInteractive),
+		TTY:                clictx.Bool(argTTY),
+		UseNodeName:        clictx.Bool(argUseNodeName),
 		LinuxNs:            clictx.StringSlice(argNs),
 	}, nil
 }

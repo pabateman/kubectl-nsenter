@@ -1,3 +1,4 @@
+// Deprecated package in favour of simple fork ssh client on host
 package ssh
 
 import (
@@ -15,36 +16,9 @@ import (
 )
 
 func ExecSSHCommand(cfg *config.Config, cmd string) error {
-	sshConfig := &ssh.ClientConfig{
-		User:            cfg.SSHUser,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
-	}
-
-	if cfg.SSHRequirePassword {
-		password, err := requestPassword(cfg.SSHUser, cfg.SSHHost)
-		if err != nil {
-			return errors.New("failed to request password")
-		}
-		sshConfig.Auth = []ssh.AuthMethod{ssh.Password(password)}
-	} else {
-		agentConnection, err := net.Dial("unix", cfg.SSHSocketPath)
-		if err != nil {
-			return err
-		}
-		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
-	}
-
-	sshHost := net.JoinHostPort(cfg.SSHHost, cfg.SSHPort)
-
-	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
+	sshSession, err := getSSHSession(cfg)
 	if err != nil {
-		return errors.WithMessagef(err, "can't dial node %s@%s\n", cfg.SSHUser, cfg.SSHHost)
-	}
-
-	sshSession, err := sshClient.NewSession()
-	if err != nil {
-		return errors.Wrap(err, "can't build ssh session")
+		return fmt.Errorf("failed to build ssh session: %v", err)
 	}
 	// nolint:errcheck
 	defer sshSession.Close()
@@ -89,4 +63,35 @@ func requestPassword(user, host string) (string, error) {
 		return "", errors.New("failed to read password")
 	}
 	return string(password), nil
+}
+
+func getSSHSession(cfg *config.Config) (*ssh.Session, error) {
+	sshConfig := &ssh.ClientConfig{
+		User:            cfg.SSHUser,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}
+
+	if cfg.SSHRequirePassword {
+		password, err := requestPassword(cfg.SSHUser, cfg.SSHHost)
+		if err != nil {
+			return nil, errors.New("failed to request password")
+		}
+		sshConfig.Auth = []ssh.AuthMethod{ssh.Password(password)}
+	} else {
+		agentConnection, err := net.Dial("unix", cfg.SSHSocketPath)
+		if err != nil {
+			return nil, err
+		}
+		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
+	}
+
+	sshHost := net.JoinHostPort(cfg.SSHHost, cfg.SSHPort)
+
+	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "can't dial node %s@%s\n", cfg.SSHUser, cfg.SSHHost)
+	}
+
+	return sshClient.NewSession()
 }
