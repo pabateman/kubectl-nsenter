@@ -35,6 +35,8 @@ jobs:
 
     - name: Run code lint
       uses: golangci/golangci-lint-action@v3.7.0
+      with:
+        args: --timeout=3m
 
     - name: Verify build
       run: make dev
