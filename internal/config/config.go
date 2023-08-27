@@ -14,11 +14,11 @@ type Config struct {
 	PodName            string
 	Container          string
 	Command            []string
-	SshUser            string
-	SshRequirePassword bool
-	SshSocketPath      string
-	SshHost            string
-	SshPort            string
+	SSHUser            string
+	SSHRequirePassword bool
+	SSHSocketPath      string
+	SSHHost            string
+	SSHPort            string
 	LinuxNs            []string
 }
 
@@ -29,7 +29,7 @@ const (
 	argNamespace   = "namespace"
 	argUser        = "user"
 	argPassword    = "password"
-	argSshAuthSock = "ssh-auth-sock"
+	argSSHAuthSock = "ssh-auth-sock"
 	argHost        = "host"
 	argPort        = "port"
 	argNs          = "ns"
@@ -79,7 +79,7 @@ var (
 			Value:   false,
 		},
 		&cli.StringFlag{
-			Name:        argSshAuthSock,
+			Name:        argSSHAuthSock,
 			Usage:       "sets ssh-agent socket",
 			EnvVars:     []string{"SSH_AUTH_SOCK"},
 			DefaultText: "current shell auth sock",
@@ -104,7 +104,7 @@ var (
 			Required: false,
 		},
 	}
-	stringFlags = []string{argKubeconfig, argContainer, argContext, argNamespace, argUser, argSshAuthSock, argHost, argPort}
+	stringFlags = []string{argKubeconfig, argContainer, argContext, argNamespace, argUser, argSSHAuthSock, argHost, argPort}
 )
 
 func NewConfig(clictx *cli.Context) (Config, error) {
@@ -130,11 +130,11 @@ func NewConfig(clictx *cli.Context) (Config, error) {
 		PodName:            podName,
 		Container:          clictx.String(argContainer),
 		Command:            command,
-		SshUser:            clictx.String(argUser),
-		SshSocketPath:      clictx.String(argSshAuthSock),
-		SshRequirePassword: clictx.Bool(argPassword),
-		SshHost:            clictx.String(argHost),
-		SshPort:            clictx.String(argPort),
+		SSHUser:            clictx.String(argUser),
+		SSHSocketPath:      clictx.String(argSSHAuthSock),
+		SSHRequirePassword: clictx.Bool(argPassword),
+		SSHHost:            clictx.String(argHost),
+		SSHPort:            clictx.String(argPort),
 		LinuxNs:            clictx.StringSlice(argNs),
 	}, nil
 }
@@ -155,6 +155,7 @@ func errorWithCliHelp(clictx *cli.Context, msg string) error {
 	if err != nil {
 		return err
 	}
+	// nolint:stylecheck
 	return fmt.Errorf("%s\n", msg)
 }
 

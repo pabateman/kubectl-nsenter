@@ -2,22 +2,25 @@ name: build by commit
 
 on:
   push:
-    branches: [ master ]
+    branches:
+    - master
+    - 'feature/**'
+
   pull_request:
-    branches: [ master ]
+    branches:
+    - master
 
 env:
   ARTIFACT_VERSION: ${{ github.ref_name }}
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
         go-version: '1.20'
 
@@ -27,11 +30,11 @@ jobs:
     - name: Verify go.mod is sane
       run: go mod tidy && git diff --no-patch --exit-code
 
-    - name: Run code lint
-      run: make lint
-
     - name: Install dependencies
       run: go mod download
+
+    - name: Run code lint
+      uses: golangci/golangci-lint-action@v3.7.0
 
     - name: Verify build
       run: make dev

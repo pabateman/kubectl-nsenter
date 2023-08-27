@@ -28,47 +28,49 @@ func Nsenter(clictx *cli.Context) error {
 	}
 
 	sshConfig := &ssh.ClientConfig{
-		User: cfg.SshUser,
+		User: cfg.SSHUser,
 		//HostKeyCallback: hostKeyCallback,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         10 * time.Second,
 	}
 
-	if cfg.SshRequirePassword {
-		password, err := requestPassword(cfg.SshUser, containerInfo.NodeIP)
+	if cfg.SSHRequirePassword {
+		password, err := requestPassword(cfg.SSHUser, containerInfo.NodeIP)
 		if err != nil {
 			return errors.New("failed to request password")
 		}
 		sshConfig.Auth = []ssh.AuthMethod{ssh.Password(password)}
 	} else {
-		agentConnection, err := net.Dial("unix", cfg.SshSocketPath)
+		agentConnection, err := net.Dial("unix", cfg.SSHSocketPath)
 		if err != nil {
 			return err
 		}
 		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
 	}
 
-	if cfg.SshHost != "" {
-		containerInfo.NodeIP = cfg.SshHost
+	if cfg.SSHHost != "" {
+		containerInfo.NodeIP = cfg.SSHHost
 	}
 
-	sshHost := net.JoinHostPort(containerInfo.NodeIP, cfg.SshPort)
+	sshHost := net.JoinHostPort(containerInfo.NodeIP, cfg.SSHPort)
 
 	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
 	if err != nil {
-		return errors.WithMessagef(err, "can't dial node %s@%s\n", cfg.SshUser, containerInfo.NodeIP)
+		return errors.WithMessagef(err, "can't dial node %s@%s\n", cfg.SSHUser, containerInfo.NodeIP)
 	}
 
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return errors.Wrap(err, "can't build ssh session")
 	}
+	// nolint:errcheck
 	defer sshSession.Close()
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
 		return errors.Wrap(err, "failed to make tty")
 	}
+	// nolint:errcheck
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
 	ttyWidth, ttyHeight, err := term.GetSize(int(os.Stdin.Fd()))
