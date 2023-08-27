@@ -63,12 +63,14 @@ func Nsenter(clictx *cli.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "can't build ssh session")
 	}
+	// nolint:errcheck
 	defer sshSession.Close()
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
 		return errors.Wrap(err, "failed to make tty")
 	}
+	// nolint:errcheck
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
 	ttyWidth, ttyHeight, err := term.GetSize(int(os.Stdin.Fd()))
