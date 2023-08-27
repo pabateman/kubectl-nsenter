@@ -7,21 +7,6 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-type Config struct {
-	KubeConfig         string
-	KubeContext        string
-	Namespace          string
-	PodName            string
-	Container          string
-	Command            []string
-	SSHUser            string
-	SSHRequirePassword bool
-	SSHSocketPath      string
-	SSHHost            string
-	SSHPort            string
-	LinuxNs            []string
-}
-
 const (
 	argKubeconfig  = "kubeconfig"
 	argContainer   = "container"
@@ -107,23 +92,38 @@ var (
 	stringFlags = []string{argKubeconfig, argContainer, argContext, argNamespace, argUser, argSSHAuthSock, argHost, argPort}
 )
 
-func NewConfig(clictx *cli.Context) (Config, error) {
+type Config struct {
+	KubeConfig         string
+	KubeContext        string
+	Namespace          string
+	PodName            string
+	Container          string
+	Command            []string
+	SSHUser            string
+	SSHRequirePassword bool
+	SSHSocketPath      string
+	SSHHost            string
+	SSHPort            string
+	LinuxNs            []string
+}
+
+func NewConfig(clictx *cli.Context) (*Config, error) {
 	podName := clictx.Args().First()
 	if podName == "" {
-		return Config{}, errorWithCliHelp(clictx, "you must specify pod name!")
+		return nil, errorWithCliHelp(clictx, "you must specify pod name!")
 	}
 
 	command := clictx.Args().Tail()
 	if len(command) == 0 {
-		return Config{}, errorWithCliHelp(clictx, "you must provide a command!")
+		return nil, errorWithCliHelp(clictx, "you must provide a command!")
 	}
 
 	err := validateStringFlagsNonEmpty(clictx, stringFlags)
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
-	return Config{
+	return &Config{
 		KubeConfig:         clictx.String(argKubeconfig),
 		KubeContext:        clictx.String(argContext),
 		Namespace:          clictx.String(argNamespace),
@@ -150,13 +150,13 @@ func validateStringFlagsNonEmpty(clictx *cli.Context, flags []string) error {
 	return nil
 }
 
-func errorWithCliHelp(clictx *cli.Context, msg string) error {
+func errorWithCliHelp(clictx *cli.Context, a any) error {
 	err := cli.ShowAppHelp(clictx)
 	if err != nil {
 		return err
 	}
 	// nolint:stylecheck
-	return fmt.Errorf("%s\n", msg)
+	return fmt.Errorf("%s\n", a)
 }
 
 func errorWithCliHelpf(clictx *cli.Context, format string, a ...any) error {
