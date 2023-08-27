@@ -26,11 +26,11 @@ jobs:
     - name: Verify go.mod is sane
       run: go mod tidy && git diff --no-patch --exit-code
 
-    - name: Run code lint
-      run: make lint
-
     - name: Install dependencies
       run: go mod download
+
+    - name: Run code lint
+      uses: golangci/golangci-lint-action@v3.7.0
 
     - name: Verify build
       run: make dev
@@ -65,4 +65,4 @@ jobs:
         file_glob: true
 
     - name: Update new version in krew-index
-      uses: rajatjindal/krew-release-bot@v0.0.43
+      uses: rajatjindal/krew-release-bot@v0.0.46
