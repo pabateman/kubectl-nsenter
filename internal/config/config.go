@@ -54,7 +54,6 @@ var (
 			Name:    argUser,
 			Aliases: []string{"u"},
 			Usage:   "set username for ssh connection to node",
-			EnvVars: []string{"USER"},
 		},
 		&cli.BoolFlag{
 			Name:    argPassword,
@@ -75,7 +74,6 @@ var (
 			Name:    argPort,
 			Aliases: []string{"p"},
 			Usage:   "sets ssh port",
-			Value:   "22",
 		},
 		&cli.StringSliceFlag{
 			Name:  argNs,
@@ -102,7 +100,7 @@ var (
 		&cli.BoolFlag{
 			Name:    argUseNodeName,
 			Aliases: []string{"j"},
-			Usage:   "use node name to connect with ssh. Useful with ssh configs",
+			Usage:   "use kubernetes node name to connect with ssh. Useful with ssh configs",
 			EnvVars: []string{"KUBECTL_NSENTER_USE_NODE_NAME"},
 			Value:   true,
 		},

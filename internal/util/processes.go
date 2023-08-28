@@ -16,14 +16,9 @@ func Fork(cmd []string, isInteractive bool) error {
 		c.Stdin = os.Stdin
 	}
 
-	err := c.Start()
+	err := c.Run()
 	if err != nil {
-		return fmt.Errorf("failed to execute child process %q: %v", c.Args[0], err)
-	}
-
-	err = c.Wait()
-	if err != nil {
-		return fmt.Errorf("error during child process execution %q: %v", c.Args[0], err)
+		return fmt.Errorf("failed to run child process %q: %v", c.Args[0], err)
 	}
 	return nil
 }

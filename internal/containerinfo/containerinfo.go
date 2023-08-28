@@ -90,13 +90,28 @@ func getContainerStatus(pod *v1.Pod, cfg *config.Config) (*v1.ContainerStatus, e
 	return nil, fmt.Errorf("pod %v has no running containers", pod.Name)
 }
 
-func GetPidDiscoverCommand(containerInfo *ContainerInfo) (string, error) {
+func GetPidDiscoverCommand(containerInfo *ContainerInfo) ([]string, error) {
 	switch containerInfo.ContainerRuntime {
 	case "docker":
-		return fmt.Sprintf("sudo docker inspect %s --format {{.State.Pid}}", containerInfo.ContainerID), nil
+		return []string{
+			"sudo",
+			"docker",
+			"inspect",
+			containerInfo.ContainerID,
+			"--format",
+			"{{.State.Pid}}",
+		}, nil
 	case "containerd", "cri-o":
-		return fmt.Sprintf("sudo crictl inspect --output go-template --template={{.info.pid}} %s", containerInfo.ContainerID), nil
+		return []string{
+			"sudo",
+			"crictl",
+			"inspect",
+			"--output",
+			"go-template",
+			"--template={{.info.pid}}",
+			containerInfo.ContainerID,
+		}, nil
 	default:
-		return "", fmt.Errorf("unsupported container runtime")
+		return nil, fmt.Errorf("unsupported container runtime")
 	}
 }

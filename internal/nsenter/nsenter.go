@@ -7,9 +7,14 @@ import (
 	"github.com/pabateman/kubectl-nsenter/internal/config"
 	"github.com/pabateman/kubectl-nsenter/internal/containerinfo"
 	"github.com/pabateman/kubectl-nsenter/internal/k8s"
-	"github.com/pabateman/kubectl-nsenter/internal/ssh"
+	"github.com/pabateman/kubectl-nsenter/internal/util"
 
 	cli "github.com/urfave/cli/v2"
+)
+
+const (
+	sshCmd     = "ssh"
+	nsenterCmd = "nsenter"
 )
 
 func Nsenter(clictx *cli.Context) error {
@@ -37,20 +42,79 @@ func Nsenter(clictx *cli.Context) error {
 		cfg.SSHHost = containerInfo.NodeIP
 	}
 
-	pidDiscoverCommand, err := containerinfo.GetPidDiscoverCommand(containerInfo)
+	if cfg.UseNodeName {
+		cfg.SSHHost = containerInfo.NodeName
+	}
+
+	cmd := buildSSHCmd(cfg)
+	nsenterCmd, err := buildNsenterCmd(cfg, containerInfo)
 	if err != nil {
 		return err
 	}
 
-	nsenterCommand := fmt.Sprintf("sudo nsenter -%s -t $(%s) %s",
-		strings.Join(cfg.LinuxNs, " -"),
-		pidDiscoverCommand,
-		strings.Join(cfg.Command, " "))
+	cmd = append(cmd, strings.Join(nsenterCmd, " "))
 
-	err = ssh.ExecSSHCommand(cfg, nsenterCommand)
+	err = util.Fork(cmd, cfg.Interactive)
 	if err != nil {
 		return fmt.Errorf("failed to execute ssh command: %v", err)
 	}
 
 	return nil
+}
+
+func buildSSHCmd(cfg *config.Config) []string {
+	result := make([]string, 0)
+
+	result = append(result, sshCmd)
+
+	if !cfg.TTY {
+		result = append(result, "-T")
+	} else {
+		result = append(result, "-t")
+	}
+
+	if cfg.SSHPort != "" {
+		result = append(result, []string{"-p", cfg.SSHPort}...)
+	}
+
+	for _, opt := range cfg.SSHOpts {
+		result = append(result, []string{"-o", opt}...)
+	}
+
+	if cfg.SSHUser != "" {
+		result = append(result, fmt.Sprintf(
+			"%s@%s",
+			cfg.SSHUser,
+			cfg.SSHHost,
+		))
+	} else {
+		result = append(result, cfg.SSHHost)
+	}
+
+	return result
+}
+
+func buildNsenterCmd(cfg *config.Config, containerInfo *containerinfo.ContainerInfo) ([]string, error) {
+	result := make([]string, 0)
+
+	result = append(result, []string{"sudo", nsenterCmd}...)
+
+	for _, ns := range cfg.LinuxNs {
+		result = append(result, fmt.Sprintf("-%s", ns))
+	}
+
+	result = append(result, "-t")
+
+	pidDiscoverCmd, err := containerinfo.GetPidDiscoverCommand(containerInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	pidDiscoverCmd[0] = fmt.Sprintf("$(%s", pidDiscoverCmd[0])
+	pidDiscoverCmd[len(pidDiscoverCmd)-1] = fmt.Sprintf("%s)", pidDiscoverCmd[len(pidDiscoverCmd)-1])
+
+	result = append(result, pidDiscoverCmd...)
+	result = append(result, cfg.Command...)
+
+	return result, nil
 }
