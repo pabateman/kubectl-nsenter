@@ -2,18 +2,19 @@ package nsenter
 
 import (
 	"fmt"
-	"net"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/pabateman/kubectl-nsenter/internal/config"
+	"github.com/pabateman/kubectl-nsenter/internal/containerinfo"
+	"github.com/pabateman/kubectl-nsenter/internal/k8s"
+	"github.com/pabateman/kubectl-nsenter/internal/util"
 
-	"github.com/pkg/errors"
 	cli "github.com/urfave/cli/v2"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
-	"golang.org/x/term"
+)
+
+const (
+	sshCmd     = "ssh"
+	nsenterCmd = "nsenter"
 )
 
 func Nsenter(clictx *cli.Context) error {
@@ -22,109 +23,98 @@ func Nsenter(clictx *cli.Context) error {
 		return err
 	}
 
-	containerInfo, err := GetContainerInfo(cfg)
+	kubeClient, err := k8s.GetKubernetesClient(cfg)
+	if err != nil {
+		return fmt.Errorf("can't build client: %v", err)
+	}
+
+	pod, err := k8s.GetPod(cfg, kubeClient)
+	if err != nil {
+		return fmt.Errorf("can't get pod spec: %v", err)
+	}
+
+	containerInfo, err := containerinfo.GetContainerInfo(cfg, pod)
 	if err != nil {
 		return fmt.Errorf("can't get container info: %v", err)
 	}
 
-	sshConfig := &ssh.ClientConfig{
-		User: cfg.SSHUser,
-		//HostKeyCallback: hostKeyCallback,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
+	if cfg.SSHHost == "" {
+		cfg.SSHHost = containerInfo.NodeIP
 	}
 
-	if cfg.SSHRequirePassword {
-		password, err := requestPassword(cfg.SSHUser, containerInfo.NodeIP)
-		if err != nil {
-			return errors.New("failed to request password")
-		}
-		sshConfig.Auth = []ssh.AuthMethod{ssh.Password(password)}
-	} else {
-		agentConnection, err := net.Dial("unix", cfg.SSHSocketPath)
-		if err != nil {
-			return err
-		}
-		sshConfig.Auth = []ssh.AuthMethod{ssh.PublicKeysCallback(agent.NewClient(agentConnection).Signers)}
+	if cfg.UseNodeName {
+		cfg.SSHHost = containerInfo.NodeName
 	}
 
-	if cfg.SSHHost != "" {
-		containerInfo.NodeIP = cfg.SSHHost
-	}
-
-	sshHost := net.JoinHostPort(containerInfo.NodeIP, cfg.SSHPort)
-
-	sshClient, err := ssh.Dial("tcp", sshHost, sshConfig)
-	if err != nil {
-		return errors.WithMessagef(err, "can't dial node %s@%s\n", cfg.SSHUser, containerInfo.NodeIP)
-	}
-
-	sshSession, err := sshClient.NewSession()
-	if err != nil {
-		return errors.Wrap(err, "can't build ssh session")
-	}
-	// nolint:errcheck
-	defer sshSession.Close()
-
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		return errors.Wrap(err, "failed to make tty")
-	}
-	// nolint:errcheck
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
-
-	ttyWidth, ttyHeight, err := term.GetSize(int(os.Stdin.Fd()))
-	if err != nil {
-		return errors.Wrap(err, "failed to get tty size")
-	}
-
-	modes := ssh.TerminalModes{
-		ssh.ECHO: 1,
-	}
-
-	err = sshSession.RequestPty("xterm", ttyHeight, ttyWidth, modes)
-	if err != nil {
-		return errors.Wrap(err, "failed to request pty")
-	}
-
-	pidDiscoverCommand, err := getPidDiscoverCommand(containerInfo)
+	cmd := buildSSHCmd(cfg)
+	nsenterCmd, err := buildNsenterCmd(cfg, containerInfo)
 	if err != nil {
 		return err
 	}
 
-	sshSession.Stdout = os.Stdout
-	sshSession.Stderr = os.Stderr
-	sshSession.Stdin = os.Stdin
+	cmd = append(cmd, strings.Join(nsenterCmd, " "))
 
-	nsenterCommand := fmt.Sprintf("sudo nsenter -%s -t $(%s) %s",
-		strings.Join(cfg.LinuxNs, " -"),
-		pidDiscoverCommand,
-		strings.Join(cfg.Command, " "))
-
-	err = sshSession.Run(nsenterCommand)
+	err = util.Fork(cmd, cfg.Interactive)
 	if err != nil {
-		return fmt.Errorf("remote shell exited with non zero code: %v", err)
+		return fmt.Errorf("failed to execute ssh command: %v", err)
 	}
 
 	return nil
 }
 
-func requestPassword(user, host string) (string, error) {
-	fmt.Printf("%s@%s's password: ", user, host)
-	password, err := term.ReadPassword(int(os.Stdin.Fd()))
-	if err != nil {
-		return "", errors.New("failed to read password")
+func buildSSHCmd(cfg *config.Config) []string {
+	result := make([]string, 0)
+
+	result = append(result, sshCmd)
+
+	if !cfg.TTY {
+		result = append(result, "-T")
+	} else {
+		result = append(result, "-t")
 	}
-	return string(password), nil
+
+	if cfg.SSHPort != "" {
+		result = append(result, []string{"-p", cfg.SSHPort}...)
+	}
+
+	for _, opt := range cfg.SSHOpts {
+		result = append(result, []string{"-o", opt}...)
+	}
+
+	if cfg.SSHUser != "" {
+		result = append(result, fmt.Sprintf(
+			"%s@%s",
+			cfg.SSHUser,
+			cfg.SSHHost,
+		))
+	} else {
+		result = append(result, cfg.SSHHost)
+	}
+
+	return result
 }
 
-func getPidDiscoverCommand(c *ContainerInfo) (string, error) {
-	switch c.ContainerRuntime {
-	case "docker":
-		return fmt.Sprintf("sudo docker inspect %s --format {{.State.Pid}}", c.ContainerID), nil
-	case "containerd", "cri-o":
-		return fmt.Sprintf("sudo crictl inspect --output go-template --template={{.info.pid}} %s", c.ContainerID), nil
-	default:
-		return "", fmt.Errorf("unsupported container runtime")
+func buildNsenterCmd(cfg *config.Config, containerInfo *containerinfo.ContainerInfo) ([]string, error) {
+	result := make([]string, 0)
+
+	result = append(result, []string{"sudo", nsenterCmd}...)
+
+	for _, ns := range cfg.LinuxNs {
+		result = append(result, fmt.Sprintf("-%s", ns))
 	}
+
+	result = append(result, "-t")
+
+	pidDiscoverCmd, err := containerinfo.GetPidDiscoverCommand(containerInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	pidDiscoverCmd[0] = fmt.Sprintf("$(%s", pidDiscoverCmd[0])
+	pidDiscoverCmd[len(pidDiscoverCmd)-1] = fmt.Sprintf("%s)", pidDiscoverCmd[len(pidDiscoverCmd)-1])
+
+	result = append(result, pidDiscoverCmd...)
+	result = append(result, cfg.Command...)
+
+	return result, nil
 }
