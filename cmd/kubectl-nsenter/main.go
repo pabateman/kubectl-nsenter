@@ -13,9 +13,11 @@ import (
 
 var Version = "local"
 
+const appName = "kubectl-nsenter"
+
 func main() {
 	app := &cli.App{
-		Name:     "kubectl-nsenter",
+		Name:     appName,
 		Version:  Version,
 		Compiled: time.Now(),
 		Authors: []*cli.Author{
@@ -23,18 +25,18 @@ func main() {
 				Name: "pabateman",
 			},
 		},
-		Copyright: "© 2022 pabateman",
-		HelpName:  "kubectl-nsenter",
+		Copyright: fmt.Sprintf("© %d pabateman", time.Time.Year(time.Now())),
+		HelpName:  appName,
 		Usage: "kubectl plugin for pod's linux namespaces command execution " +
 			"via direct node ssh connection",
-		UsageText: `kubectl-nsenter [flags] [pod name] [command]
+		UsageText: fmt.Sprintf(`%s [flags] [pod name] [command]
 
 		Example:
 
-		kubectl-nsenter -u node_user sample-pod-0 ip address
+		%s -u node_user sample-pod-0 ip address
 
-		kubectl-nsenter -u node_user -p 2222 postgres-1 tcpdump -nni any port 5432
-		`,
+		%s -u node_user -p 2222 postgres-1 tcpdump -nni any port 5432
+		`, appName, appName, appName),
 		UseShortOptionHandling: true,
 		EnableBashCompletion:   true,
 		HideHelpCommand:        true,
