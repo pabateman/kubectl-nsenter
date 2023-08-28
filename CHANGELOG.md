@@ -1,5 +1,12 @@
 # Release history
 
+## v1.0.0
+
+- Completely refactor plugin
+- Switch to host's ssh client execution instead of golang ssh client
+- Passthrough some ssh options
+- Add interactive sessions and pseudo-tty allocating flags
+
 ## v0.2.3
 
 - Fix ref name
