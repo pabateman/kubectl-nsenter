@@ -10,6 +10,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+const containerdShellCmd = `"if command -v nerdctl >/dev/null 2>&1; then
+	exec nerdctl inspect %[1]s --format {{.State.Pid}}
+fi
+exec crictl inspect --output go-template --template={{.info.pid}} %[1]s"`
+
 type ContainerInfo struct {
 	NodeName         string
 	NodeIP           string
@@ -101,7 +106,16 @@ func GetPidDiscoverCommand(containerInfo *ContainerInfo) ([]string, error) {
 			"--format",
 			"{{.State.Pid}}",
 		}, nil
-	case "containerd", "cri-o":
+
+	case "containerd":
+		return []string{
+			"sudo",
+			"sh",
+			"-c",
+			fmt.Sprintf(containerdShellCmd, containerInfo.ContainerID),
+		}, nil
+
+	case "cri-o":
 		return []string{
 			"sudo",
 			"crictl",

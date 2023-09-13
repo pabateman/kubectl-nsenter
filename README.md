@@ -88,7 +88,8 @@ If desired pod is still initializing, nsenter will pick currently running contai
 Container Runtimes Clients:
 
 - docker;
-- crictl.
+- crictl - expected to be present on nodes with cri-o runtime;
+- nerdctl - expected to be present on nodes with containerd runtime; crictl will be used as a fallback.
 
 OS:
 
