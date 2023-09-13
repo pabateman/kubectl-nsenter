@@ -90,6 +90,11 @@ func getContainerStatus(pod *v1.Pod, cfg *config.Config) (*v1.ContainerStatus, e
 	return nil, fmt.Errorf("pod %v has no running containers", pod.Name)
 }
 
+const containerdShellCmd = `"if command -v nerdctl >/dev/null 2>&1; then
+	exec nerdctl inspect %[1]s --format {{.State.Pid}}
+fi
+exec crictl inspect --output go-template --template={{.info.pid}} %[1]s"`
+
 func GetPidDiscoverCommand(containerInfo *ContainerInfo) ([]string, error) {
 	switch containerInfo.ContainerRuntime {
 	case "docker":
@@ -101,7 +106,11 @@ func GetPidDiscoverCommand(containerInfo *ContainerInfo) ([]string, error) {
 			"--format",
 			"{{.State.Pid}}",
 		}, nil
-	case "containerd", "cri-o":
+
+	case "containerd":
+		return []string{"sudo", "sh", "-c", fmt.Sprintf(containerdShellCmd, containerInfo.ContainerID)}, nil
+
+	case "cri-o":
 		return []string{
 			"sudo",
 			"crictl",
