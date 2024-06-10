@@ -3,12 +3,11 @@ name: build by commit
 on:
   push:
     branches:
-    - master
-    - 'feature/**'
+    - '*'
 
   pull_request:
     branches:
-    - master
+    - '*'
 
 env:
   ARTIFACT_VERSION: ${{ github.ref_name }}
