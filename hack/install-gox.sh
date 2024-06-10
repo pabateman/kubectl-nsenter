@@ -30,7 +30,7 @@ install_gox() {
   cd "${scratch_dir}"
   env GOPATH="${scratch_dir}" \
     GOBIN="${gobin}" \
-    go get github.com/mitchellh/gox@9f712387e2d2c810d99040228f89ae5bb5dd21e5
+    go install github.com/mitchellh/gox@9f712387e2d2c810d99040228f89ae5bb5dd21e5
 }
 
 ensure_gox() {
