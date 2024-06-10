@@ -29,9 +29,8 @@ install_gox() {
   gobin="$(go env GOPATH)/bin"
   cd "${scratch_dir}"
   env GOPATH="${scratch_dir}" \
-    GO111MODULE=off \
     GOBIN="${gobin}" \
-    go get github.com/mitchellh/gox
+    go get github.com/mitchellh/gox@9f712387e2d2c810d99040228f89ae5bb5dd21e5
 }
 
 ensure_gox() {
