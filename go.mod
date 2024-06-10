@@ -1,6 +1,6 @@
 module github.com/pabateman/kubectl-nsenter
 
-go 1.20
+go 1.22
 
 require (
 	github.com/pkg/errors v0.9.1
@@ -8,9 +8,8 @@ require (
 	golang.org/x/crypto v0.17.0
 	golang.org/x/term v0.15.0
 	k8s.io/api v0.29.0
-
 	k8s.io/apimachinery v0.29.0
-	k8s.io/client-go v0.28.2
+	k8s.io/client-go v0.29.0
 )
 
 require (
