@@ -13,21 +13,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.20'
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
 
     - name: Verify go.mod is sane
       run: go mod tidy && git diff --no-patch --exit-code
 
     - name: Run code lint
-      uses: golangci/golangci-lint-action@v3.7.0
+      uses: golangci/golangci-lint-action@v6.0.1
       with:
         args: --timeout=3m
 
@@ -45,26 +42,16 @@ jobs:
         hack/install-gox.sh
         make deploy
 
-    - name: Create release
+    - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
-
-    - name: Upload binaries to release
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        # hacky glob pattern because this does not accept multiple patterns
-        file: out/kubectl-nsenter-*.*
-        tag: ${{ github.ref }}
-        overwrite: true
-        file_glob: true
+        files: out/kubectl-nsenter-*.*
 
     - name: Update new version in krew-index
       uses: rajatjindal/krew-release-bot@v0.0.46
