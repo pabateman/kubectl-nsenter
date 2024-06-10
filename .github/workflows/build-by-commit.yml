@@ -3,12 +3,11 @@ name: build by commit
 on:
   push:
     branches:
-    - master
-    - 'feature/**'
+    - '*'
 
   pull_request:
     branches:
-    - master
+    - '*'
 
 env:
   ARTIFACT_VERSION: ${{ github.ref_name }}
@@ -17,15 +16,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: '1.22.4'
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v2
 
     - name: Verify go.mod is sane
       run: go mod tidy && git diff --no-patch --exit-code
