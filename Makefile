@@ -43,8 +43,8 @@ help:
 	@echo '  - deploy:   build artifacts for a new deployment'
 	@echo '  - dev:      build the binary for the current platform'
 	@echo '  - dist:     create a tar archive of the source code'
-	@echo '  - help:     print this help'
 	@echo '  - lint:     run golangci-lint'
+	@echo '  - help:     print this help'
 
 $(BUILDDIR):
 	mkdir -p "$@"
