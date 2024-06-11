@@ -57,6 +57,12 @@ jobs:
         draft: false
         prerelease: false
         files: out/*
+  krew:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
 
     - name: Update new version in krew-index
       uses: rajatjindal/krew-release-bot@v0.0.46
