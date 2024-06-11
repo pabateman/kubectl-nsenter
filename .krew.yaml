@@ -28,6 +28,17 @@ spec:
         to: .
   - selector:
       matchLabels:
+        os: linux
+        arch: arm64
+    {{addURIAndSha "https://github.com/pabateman/kubectl-nsenter/releases/download/{{ .TagName }}/kubectl-nsenter-linux-arm64.tar.gz" .TagName }}
+    bin: kubectl-nsenter
+    files:
+      - from: kubectl-nsenter-linux-arm64
+        to: kubectl-nsenter
+      - from: LICENSE
+        to: .
+  - selector:
+      matchLabels:
         os: darwin
         arch: amd64
     {{addURIAndSha "https://github.com/pabateman/kubectl-nsenter/releases/download/{{ .TagName }}/kubectl-nsenter-darwin-amd64.tar.gz" .TagName }}

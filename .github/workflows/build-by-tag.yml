@@ -12,6 +12,11 @@ env:
 jobs:
 
   build:
+    strategy:
+      matrix:
+        goos: ["linux", "darwin"]
+        goarch: ["amd64", "arm64"]
+
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -40,8 +45,7 @@ jobs:
         set -euo pipefail
         sudo apt update
         sudo apt install -y upx
-        hack/install-gox.sh
-        make deploy
+        make ${{ matrix.goos }}/${{ matrix.goarch }}/archive
 
     - name: Create Release
       id: create_release
@@ -52,7 +56,7 @@ jobs:
         release_name: Release ${{ github.ref }}
         draft: false
         prerelease: false
-        files: out/kubectl-nsenter-*.*
+        files: out/*
 
-    # - name: Update new version in krew-index
-    #   uses: rajatjindal/krew-release-bot@v0.0.46
+    - name: Update new version in krew-index
+      uses: rajatjindal/krew-release-bot@v0.0.46
