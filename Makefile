@@ -19,31 +19,20 @@ PROJECT   ?= kubectl-nsenter
 REPOPATH  ?= github.com/pabateman/$(PROJECT)
 COMMIT    := $(shell git rev-parse HEAD)
 VERSION   ?= $(shell git describe --always --tags)
-GOOS      ?= $(shell go env GOOS)
 GOPATH    ?= $(shell go env GOPATH)
 ARTIFACT_VERSION ?= local
 
+NPROCS = $(shell grep -c 'processor' /proc/cpuinfo)
+MAKEFLAGS += -j$(NPROCS)
+
 BUILDDIR   := $(shell pwd)/out
-PLATFORMS  ?= darwin/amd64 darwin/arm64 linux/amd64
+PLATFORMS  ?= darwin/amd64 darwin/arm64 linux/amd64 linux/arm64
 DISTFILE   := $(BUILDDIR)/$(PROJECT)-$(VERSION)-source.tar.gz
-ASSETS     := $(BUILDDIR)/$(PROJECT)-darwin-amd64.tar.gz \
-              $(BUILDDIR)/$(PROJECT)-darwin-arm64.tar.gz \
-              $(BUILDDIR)/$(PROJECT)-linux-amd64.tar.gz
-
-CHECKSUMS  := $(patsubst %, %.sha256, $(ASSETS))
-DATE_FMT = %Y-%m-%dT%H:%M:%SZ
 COMPRESS := gzip --best -k -c
+
 define doUPX
-	upx -9q $@
+	upx -9q --force-macos $@
 endef
-
-ifdef SOURCE_DATE_EPOCH
-    # GNU and BSD date require different options for a fixed date
-    BUILD_DATE ?= $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null)
-else
-    BUILD_DATE ?= $(shell date "+$(DATE_FMT)")
-endif
-
 
 .PHONY: help
 help:
@@ -63,21 +52,44 @@ $(BUILDDIR):
 .PHONY: all
 all: lint build deploy
 
-
-.PHONY: dev
-dev: CGO_ENABLED := 1
-dev:
-	go build -race -o $(PROJECT) -ldflags="-X main.Version=$(ARTIFACT_VERSION)" cmd/$(PROJECT)/main.go
-
-.PHONY: build
-build: $(BUILDDIR)
-	cd cmd/$(PROJECT) && \
-	GOFLAGS="-trimpath" gox -ldflags="-X main.Version=$(ARTIFACT_VERSION)" -osarch="$(PLATFORMS)" -output="$(BUILDDIR)/$(PROJECT)-{{.OS}}-{{.Arch}}" && \
-	cd ../..
-
 .PHONY: lint
 lint:
-	hack/run-lint.sh
+	golangci-lint run \
+		--timeout=3m \
+		--exclude-dirs hack
+
+.INTERMEDIATE: $(DISTFILE:.gz=)
+$(DISTFILE:.gz=): $(BUILDDIR)
+	git archive --prefix="$(PROJECT)-$(VERSION)/" --format=tar HEAD > "$@"
+
+.PHONY: dist
+dist: $(DISTFILE)
+
+
+.PHONY: dev
+dev:
+	go build -o $(PROJECT) cmd/$(PROJECT)/main.go
+
+PLATFORM_TARGETS := $(PLATFORMS)
+
+$(PLATFORM_TARGETS):
+	$(eval OSARCH := $(subst /, ,$@))
+	$(eval OS := $(firstword $(OSARCH)))
+	$(eval ARCH := $(lastword $(OSARCH)))
+	GOARCH=$(ARCH) GOOS=$(OS) \
+	go build \
+		-trimpath \
+		-o $(BUILDDIR)/$(PROJECT)-$(OS)-$(ARCH) \
+		-ldflags="\
+			-X main.Version=$(ARTIFACT_VERSION) \
+			-X main.GoVersion=$(shell go version | cut -d " " -f 3) \
+			-X main.Compiler=$(shell go env CC)                     \
+			-X main.Platform=$(shell go env GOOS)/$(shell go env GOARCH)  \
+			" \
+		cmd/$(PROJECT)/main.go
+
+.PHONY: build
+build: $(BUILDDIR) $(PLATFORM_TARGETS)
 
 .PRECIOUS: %.gz
 %.gz: %
@@ -86,26 +98,22 @@ lint:
 %.tar: %
 	cp LICENSE $(BUILDDIR)
 	tar cf "$@" -C $(BUILDDIR) LICENSE $(patsubst $(BUILDDIR)/%,%,$^)
+	$(RM) $(BUILDDIR)/LICENSE $(patsubst %.tar, %, $@)
 
 %.sha256: %
 	sha256sum  $< > $@
 
-.INTERMEDIATE: $(DISTFILE:.gz=)
-$(DISTFILE:.gz=): $(BUILDDIR)
-	git archive --prefix="$(PROJECT)-$(VERSION)/" --format=tar HEAD > "$@"
+$(foreach platform, $(PLATFORM_TARGETS), $(platform)/archive): SUFFIX = $(subst /,-,$(patsubst %/archive,%,$@))
+$(foreach platform, $(PLATFORM_TARGETS), $(platform)/archive): $(BUILDDIR)
+	$(MAKE) $(BUILDDIR)/$(PROJECT)-$(SUFFIX).tar.gz.sha256
 
 .PHONY: deploy
-deploy: $(CHECKSUMS)
-		$(RM) $(BUILDDIR)/LICENSE
-
-.PHONY: dist
-dist: $(DISTFILE)
+deploy: $(foreach platform, $(PLATFORMS), $(platform)/archive)
 
 .PHONY: clean
 clean:
-	$(RM) -r $(BUILDDIR) $(PROJECT)
+	$(RM) -r $(BUILDDIR)/* $(PROJECT)
 
-$(BUILDDIR)/$(PROJECT)-darwin-arm64: build
-$(BUILDDIR)/$(PROJECT)-darwin-amd64: build
-$(BUILDDIR)/$(PROJECT)-linux-amd64: build
-	$(doUPX)
+$(foreach platform, $(PLATFORMS), $(BUILDDIR)/$(PROJECT)-$(firstword $(subst /, ,$(platform)))-$(lastword $(subst /, ,$(platform)))):
+	$(eval basename := $(notdir $@))
+	$(MAKE) $(subst -,/, $(patsubst $(PROJECT)-%, %, $(basename)))

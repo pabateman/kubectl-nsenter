@@ -40,7 +40,6 @@ jobs:
         set -euo pipefail
         sudo apt update
         sudo apt install -y upx
-        hack/install-gox.sh
         make deploy
 
     - name: Create Release
