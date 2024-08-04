@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.27.3
-	golang.org/x/crypto v0.21.0
+	golang.org/x/crypto v0.25.0
 	golang.org/x/term v0.22.0
 	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.29.0
@@ -38,7 +38,7 @@ require (
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.11.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
