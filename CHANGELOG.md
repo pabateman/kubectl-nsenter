@@ -1,5 +1,17 @@
 # Release history
 
+## v1.1.3
+
+- Bump dependencies
+
+## v1.1.2
+
+- Refactor GitHub Actions
+
+## v1.1.0
+
+- `nerdctl` support (@miminar)
+
 ## v1.0.0
 
 - Completely refactor plugin
