@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	github.com/pkg/errors v0.9.1
-	github.com/urfave/cli/v2 v2.27.3
+	github.com/urfave/cli/v2 v2.27.4
 	golang.org/x/crypto v0.25.0
 	golang.org/x/term v0.22.0
 	k8s.io/api v0.30.3
