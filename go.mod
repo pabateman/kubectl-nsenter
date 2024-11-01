@@ -7,8 +7,8 @@ require (
 	github.com/urfave/cli/v2 v2.27.4
 	golang.org/x/crypto v0.28.0
 	golang.org/x/term v0.25.0
-	k8s.io/api v0.31.1
-	k8s.io/apimachinery v0.31.1
+	k8s.io/api v0.31.2
+	k8s.io/apimachinery v0.31.2
 	k8s.io/client-go v0.31.1
 )
 
