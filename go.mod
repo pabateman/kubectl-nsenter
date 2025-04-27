@@ -1,6 +1,7 @@
 module github.com/pabateman/kubectl-nsenter
 
 go 1.23.2
+
 toolchain go1.24.1
 
 require (
