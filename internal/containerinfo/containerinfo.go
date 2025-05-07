@@ -11,9 +11,10 @@ import (
 )
 
 const containerdShellCmd = `"if command -v nerdctl >/dev/null 2>&1; then
-	exec nerdctl inspect %[1]s --format {{.State.Pid}}
-fi
-exec crictl inspect --output go-template --template={{.info.pid}} %[1]s"`
+	exec nerdctl inspect %[1]s --format {{.State.Pid}};
+else
+	exec crictl inspect --output go-template --template={{.info.pid}} %[1]s;
+fi"`
 
 type ContainerInfo struct {
 	NodeName         string
@@ -100,6 +101,7 @@ func GetPidDiscoverCommand(containerInfo *ContainerInfo) ([]string, error) {
 	case "docker":
 		return []string{
 			"sudo",
+			"-i",
 			"docker",
 			"inspect",
 			containerInfo.ContainerID,
@@ -110,6 +112,7 @@ func GetPidDiscoverCommand(containerInfo *ContainerInfo) ([]string, error) {
 	case "containerd":
 		return []string{
 			"sudo",
+			"-i",
 			"sh",
 			"-c",
 			fmt.Sprintf(containerdShellCmd, containerInfo.ContainerID),
@@ -118,6 +121,7 @@ func GetPidDiscoverCommand(containerInfo *ContainerInfo) ([]string, error) {
 	case "cri-o":
 		return []string{
 			"sudo",
+			"-i",
 			"crictl",
 			"inspect",
 			"--output",
