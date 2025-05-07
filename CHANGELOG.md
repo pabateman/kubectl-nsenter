@@ -1,5 +1,18 @@
 # Release history
 
+## v1.2.0
+
+- Bump dependencies
+- Add the `-i` option for the `sudo` command when running on the kubernetes host
+
+## v1.1.5
+
+- Bump dependencies
+
+## v1.1.4
+
+- Bump dependencies
+
 ## v1.1.3
 
 - Bump dependencies
