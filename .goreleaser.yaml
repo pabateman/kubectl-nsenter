@@ -23,4 +23,4 @@ checksum:
   algorithm: sha256
   split: true
 changelog:
-  disable: true
+  use: github-native
