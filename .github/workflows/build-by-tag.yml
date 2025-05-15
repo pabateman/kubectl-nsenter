@@ -7,7 +7,6 @@ on:
 
 env:
   ARTIFACT_VERSION: ${{ github.ref_name }}
-  GO111MODULE: "on"
 
 jobs:
   build:
