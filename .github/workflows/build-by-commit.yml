@@ -31,8 +31,14 @@ jobs:
         with:
           args: --timeout=3m
 
-      - name: Install dependencies
-        run: go mod download
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2.9.0
+          install-only: true
 
       - name: Verify build
-        run: make dev
+        shell: bash
+        run: |
+          goreleaser check
+          ARTIFACT_VERSION="local" goreleaser build --clean --snapshot
