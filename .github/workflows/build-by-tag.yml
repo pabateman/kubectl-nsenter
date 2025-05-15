@@ -5,59 +5,36 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
 
+permissions:
+  contents: write
+
 env:
   ARTIFACT_VERSION: ${{ github.ref_name }}
 
 jobs:
   build:
-    strategy:
-      matrix:
-        goos: ["linux", "darwin"]
-        goarch: ["amd64", "arm64"]
-
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
 
-      - name: Verify go.mod is sane
-        run: go mod tidy && git diff --no-patch --exit-code
-
-      - name: Run code lint
-        uses: golangci/golangci-lint-action@v6.0.1
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          args: --timeout=3m
-
-      - name: Install dependencies
-        run: go mod download
-
-      - name: Verify build
-        run: make dev
-
-      - name: Make binaries
-        run: |
-          set -euo pipefail
-          sudo apt update
-          sudo apt install -y upx
-          make ${{ matrix.goos }}/${{ matrix.goarch }}/archive
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
+          version: v2.9.0
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          files: out/*
 
   krew:
-    needs: build
+    needs:
+      - build
     runs-on: ubuntu-latest
 
     steps:
