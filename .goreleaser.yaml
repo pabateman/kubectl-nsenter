@@ -15,8 +15,7 @@ builds:
     ldflags:
       - -X main.Version={{.Env.ARTIFACT_VERSION}}
 archives:
-  - name_template: "{{ .Binary }}-{{ .Os }}-{{ .Arch }}"
-    wrap_in_directory: false
+  - wrap_in_directory: false
     files:
       - LICENSE
 checksum:
