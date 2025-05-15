@@ -24,3 +24,5 @@ checksum:
   split: true
 changelog:
   use: github-native
+release:
+  name_template: "Release {{.Tag}}"
