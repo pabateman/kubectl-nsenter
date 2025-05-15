@@ -1,0 +1,16 @@
+project_name: kubectl-nsenter
+builds:
+  - env: [CGO_ENABLED=0]
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -X main.Version={{.Env.ARTIFACT_VERSION}}
+checksum:
+  algorithm: sha256
+  split: true
