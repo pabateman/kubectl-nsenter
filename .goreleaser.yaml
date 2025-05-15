@@ -1,6 +1,7 @@
 project_name: kubectl-nsenter
 builds:
-  - env: [CGO_ENABLED=0]
+  - main: ./cmd/kubectl-nsenter
+    env: [CGO_ENABLED=0]
     goos:
       - linux
       - darwin
