@@ -8,7 +8,7 @@ require (
 	golang.org/x/crypto v0.37.0
 	golang.org/x/term v0.31.0
 	k8s.io/api v0.33.0
-	k8s.io/apimachinery v0.33.0
+	k8s.io/apimachinery v0.33.1
 	k8s.io/client-go v0.33.0
 )
 
