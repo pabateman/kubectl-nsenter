@@ -3,11 +3,11 @@ name: build by commit
 on:
   push:
     branches:
-    - '*'
+      - "*"
 
   pull_request:
     branches:
-    - '*'
+      - "*"
 
 env:
   ARTIFACT_VERSION: ${{ github.ref_name }}
@@ -16,23 +16,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.23.2'
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
-    - name: Verify go.mod is sane
-      run: go mod tidy && git diff --no-patch --exit-code
+      - name: Verify go.mod is sane
+        run: go mod tidy && git diff --no-patch --exit-code
 
-    - name: Run code lint
-      uses: golangci/golangci-lint-action@v3.7.0
-      with:
-        args: --timeout=3m
+      - name: Run code lint
+        uses: golangci/golangci-lint-action@v3.7.0
+        with:
+          args: --timeout=3m
 
-    - name: Install dependencies
-      run: go mod download
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: v2.9.0
+          install-only: true
 
-    - name: Verify build
-      run: make dev
+      - name: Verify build
+        shell: bash
+        run: |
+          goreleaser check
+          ARTIFACT_VERSION="local" goreleaser build --clean --snapshot
