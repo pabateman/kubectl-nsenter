@@ -179,7 +179,7 @@ func errorWithCliHelp(clictx *cli.Context, a any) error {
 	if err != nil {
 		return err
 	}
-	// nolint:stylecheck
+	//nolint:staticcheck
 	return fmt.Errorf("%s\n", a)
 }
 
