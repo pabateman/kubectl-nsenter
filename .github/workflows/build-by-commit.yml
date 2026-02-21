@@ -27,7 +27,7 @@ jobs:
         run: go mod tidy && git diff --no-patch --exit-code
 
       - name: Run code lint
-        uses: golangci/golangci-lint-action@v8.0.0
+        uses: golangci/golangci-lint-action@v9.2.0
         with:
           args: --timeout=3m
 
